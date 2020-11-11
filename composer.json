@@ -1,6 +1,8 @@
 {
     "name": "drupal/helfi_tunnistamo",
+    "description": "Tunnistamo integration",
     "type": "drupal-custom-module",
+    "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
     "require": {
         "drupal/openid_connect": "~1.0"
