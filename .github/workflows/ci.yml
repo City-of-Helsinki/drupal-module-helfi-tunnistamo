@@ -5,6 +5,7 @@ env:
   SIMPLETEST_BASE_URL: "http://127.0.0.1:8080"
   DRUPAL_CORE: 9.0.x
   DRUPAL_TEST_GROUPS: helfi_tunnistamo
+  INSTALLER_TYPE: composer-project
 jobs:
   tests:
     runs-on: ubuntu-latest
