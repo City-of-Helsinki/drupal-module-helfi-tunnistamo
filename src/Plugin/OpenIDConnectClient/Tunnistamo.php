@@ -7,8 +7,6 @@ namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 
 /**
- * Tunnistamo OpenID Connect client.
- *
  * Implements OpenID Connect Client plugin for Tunnistamo.
  *
  * @OpenIDConnectClient(
