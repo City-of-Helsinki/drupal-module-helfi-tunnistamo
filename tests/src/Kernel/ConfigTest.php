@@ -16,7 +16,7 @@ class ConfigTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['helfi_tunnistamo', 'openid_connect', 'user'];
+  protected static $modules = ['helfi_tunnistamo', 'openid_connect', 'user'];
 
   /**
    * {@inheritdoc}
