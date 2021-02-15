@@ -13,7 +13,7 @@ enable `tunnistamo` client from `/admin/config/services/openid-connect`.
 
 ## Local development
 
-Add these to your settings.local.php:
+Add these to your local.settings.php:
 
 ```
 $config['openid_connect.settings.tunnistamo']['settings']['client_id'] = 'your-client-id';
