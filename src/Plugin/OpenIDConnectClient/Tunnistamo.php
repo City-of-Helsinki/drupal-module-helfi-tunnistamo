@@ -27,4 +27,15 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getClientScopes() : array {
+    return [
+      'openid',
+      'email',
+      'ad_groups',
+    ];
+  }
+
 }
