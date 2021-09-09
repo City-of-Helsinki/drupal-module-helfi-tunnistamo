@@ -4,7 +4,7 @@
 
 ## Usage
 
-Tunnistamo client should be enabled automatically, but in case it didn't you can
+Tunnistamo client should be enabled automatically, but in case it wasn't, you can
 enable `tunnistamo` client from `/admin/config/services/openid-connect`.
 
 ## Redirect URL
