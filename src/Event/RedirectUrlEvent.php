@@ -32,6 +32,8 @@ final class RedirectUrlEvent extends Event {
    *
    * @param \Drupal\Core\Url $redirectUrl
    *   The redirect url.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
    */
   public function __construct(Url $redirectUrl, Request $request) {
     $this->redirectUrl = $redirectUrl;
