@@ -1,16 +1,13 @@
-openid_connect.settings.tunnistamo:
-  type: config_object
+openid_connect.client.plugin.tunnistamo:
+  type: openid_connect.client.plugin.[%parent.plugin]
   label: 'OpenID Connect Tunnistamo settings'
   mapping:
-    enabled:
-      type: boolean
-      label: 'Enable client'
-    settings:
-      type: mapping
-      mapping:
-        client_id:
-          type: string
-          label: 'Client ID'
-        client_secret:
-          type: string
-          label: 'Client secret'
+    is_production:
+      type: integer
+      label: 'Whether to use production environment or not'
+    client_id:
+      type: string
+      label: 'Client ID'
+    client_secret:
+      type: string
+      label: 'Client secret'

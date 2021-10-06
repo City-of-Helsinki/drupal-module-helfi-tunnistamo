@@ -16,7 +16,12 @@ class ConfigTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['helfi_tunnistamo', 'openid_connect', 'user'];
+  protected static $modules = [
+    'helfi_tunnistamo',
+    'externalauth',
+    'openid_connect',
+    'user',
+  ];
 
   /**
    * {@inheritdoc}
@@ -31,11 +36,11 @@ class ConfigTest extends KernelTestBase {
    * Make sure tunnistamo is enabled by default.
    */
   public function testEnable() : void {
-    $config = $this->config('openid_connect.settings.tunnistamo');
+    $config = $this->config('openid_connect.client.tunnistamo')->get('settings');
 
-    $this->assertNull($config->get('client_id'));
-    $this->assertNull($config->get('client_secret'));
-    $this->assertTrue($config->get('enabled'));
+    $this->assertEquals('placeholder', $config['client_id']);
+    $this->assertEquals('placeholder', $config['client_secret']);
+    $this->assertEquals(0, $config['is_production']);
   }
 
 }
