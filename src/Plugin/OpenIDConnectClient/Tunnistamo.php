@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\GeneratedUrl;
 use Drupal\Core\Url;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
@@ -34,6 +35,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * @var string
    */
   public const PRODUCTION_ENVIRONMENT = 'https://api.hel.fi/sso';
+
+  /**
+   * Whether to send silent authentication or not.
+   *
+   * @var bool
+   */
+  private bool $silentAuthentication = FALSE;
 
   /**
    * The event dispatcher.
@@ -73,12 +81,41 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     array $options = []
   ): Url {
     $url = parent::getRedirectUrl($route_parameters, $options);
-    /** @var \Drupal\helfi_tunnistamo\Event\RedirectUrlEvent $dispachedUrl */
-    $dispachedUrl = $this->eventDispatcher->dispatch(new RedirectUrlEvent(
+    /** @var \Drupal\helfi_tunnistamo\Event\RedirectUrlEvent $urlEvent */
+    $urlEvent = $this->eventDispatcher->dispatch(new RedirectUrlEvent(
       $url,
       $this->requestStack->getCurrentRequest()
     ));
-    return $dispachedUrl->getRedirectUrl();
+    return $urlEvent->getRedirectUrl();
+  }
+
+  /**
+   * Attempt to authenticate silently without prompt.
+   *
+   * @return $this
+   *   The self.
+   */
+  public function setSilentAuthentication() : self {
+    $this->silentAuthentication = TRUE;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getUrlOptions(
+    string $scope,
+    GeneratedUrl $redirect_uri
+  ): array {
+    $options = parent::getUrlOptions($scope, $redirect_uri);
+
+    if ($this->silentAuthentication) {
+      $options['query'] += [
+        'prompt' => 'none',
+      ];
+    }
+
+    return $options;
   }
 
   /**

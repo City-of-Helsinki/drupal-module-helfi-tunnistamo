@@ -1,0 +1,6 @@
+services:
+  helfi_tunnistamo.http_exception_subscriber:
+    class: Drupal\helfi_tunnistamo\EventSubscriber\HttpExceptionSubscriber
+    tags:
+      - { name: event_subscriber }
+    arguments: ['@current_user']
