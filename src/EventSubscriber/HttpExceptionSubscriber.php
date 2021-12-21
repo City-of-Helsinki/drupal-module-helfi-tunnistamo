@@ -8,7 +8,6 @@ use Drupal\Core\Config\Entity\ConfigEntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\EventSubscriber\HttpExceptionSubscriberBase;
 use Drupal\Core\Session\AccountProxyInterface;
-use Drupal\helfi_tunnistamo\AutoLoginSession;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\openid_connect\OpenIDConnectSession;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
