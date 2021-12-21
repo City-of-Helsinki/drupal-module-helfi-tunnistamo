@@ -70,7 +70,19 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   public function defaultConfiguration() : array {
     return [
       'is_production' => FALSE,
+      'client_scopes' => 'openid,email',
+      'auto_login' => FALSE,
     ] + parent::defaultConfiguration();
+  }
+
+  /**
+   * Whether 'auto_login' setting is enabled or not.
+   *
+   * @return bool
+   *   TRUE if we should auto login.
+   */
+  public function autoLogin() : bool {
+    return (bool) $this->configuration['auto_login'];
   }
 
   /**
@@ -158,6 +170,19 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#default_value' => $this->isProduction(),
     ];
 
+    $form['auto_login'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Auto login on 403 pages'),
+      '#default_value' => $this->configuration['auto_login'],
+    ];
+
+    $form['client_scopes'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Client scopes'),
+      '#description' => $this->t('A comma separated list of client scopes.'),
+      '#default_value' => $this->configuration['client_scopes'],
+    ];
+
     return $form;
   }
 
@@ -165,11 +190,12 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function getClientScopes() : array {
-    return [
-      'openid',
-      'email',
-      'ad_groups',
-    ];
+    $scopes = $this->configuration['client_scopes'];
+
+    if (!$scopes) {
+      return ['openid', 'email', 'ad_groups'];
+    }
+    return explode(',', $this->configuration['client_scopes']);
   }
 
 }
