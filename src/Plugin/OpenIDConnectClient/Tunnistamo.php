@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
@@ -23,20 +23,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 final class Tunnistamo extends OpenIDConnectClientBase {
 
   /**
-   * Testing environment address.
-   *
-   * @var string
-   */
-  public const TESTING_ENVIRONMENT = 'https://api.hel.fi/sso-test';
-
-  /**
-   * Production environment address.
-   *
-   * @var string
-   */
-  public const PRODUCTION_ENVIRONMENT = 'https://api.hel.fi/sso';
-
-  /**
    * Whether to send silent authentication or not.
    *
    * @var bool
@@ -55,9 +41,9 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public static function create(
     ContainerInterface $container,
-    array $configuration,
-    $plugin_id,
-    $plugin_definition
+    array              $configuration,
+                       $plugin_id,
+                       $plugin_definition
   ) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
@@ -67,12 +53,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   /**
    * {@inheritdoc}
    */
-  public function defaultConfiguration() : array {
+  public function defaultConfiguration(): array {
     return [
-      'is_production' => FALSE,
-      'client_scopes' => 'openid,email',
-      'auto_login' => FALSE,
-    ] + parent::defaultConfiguration();
+        'is_production' => FALSE,
+        'client_scopes' => 'openid,email',
+        'environment_url' => 'https://tunnistamo.test.hel.ninja',
+        'auto_login' => FALSE,
+      ] + parent::defaultConfiguration();
   }
 
   /**
@@ -81,7 +68,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * @return bool
    *   TRUE if we should auto login.
    */
-  public function autoLogin() : bool {
+  public function autoLogin(): bool {
     return (bool) $this->configuration['auto_login'];
   }
 
@@ -107,7 +94,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * @return $this
    *   The self.
    */
-  public function setSilentAuthentication() : self {
+  public function setSilentAuthentication(): self {
     $this->silentAuthentication = TRUE;
     return $this;
   }
@@ -116,7 +103,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   protected function getUrlOptions(
-    string $scope,
+    string       $scope,
     GeneratedUrl $redirect_uri
   ): array {
     $options = parent::getUrlOptions($scope, $redirect_uri);
@@ -133,10 +120,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   /**
    * {@inheritdoc}
    */
-  public function getEndpoints() : array {
-    $base = $this->isProduction() ?
-      self::PRODUCTION_ENVIRONMENT :
-      self::TESTING_ENVIRONMENT;
+  public function getEndpoints(): array {
+    $base = $this->configuration['environment_url'];
 
     return [
       'authorization' => sprintf('%s/openid/authorize/', $base),
@@ -151,7 +136,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * @return bool
    *   TRUE if we're operating on production environment.
    */
-  public function isProduction() : bool {
+  public function isProduction(): bool {
     return (bool) $this->configuration['is_production'];
   }
 
@@ -159,10 +144,12 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(
-    array $form,
+    array              $form,
     FormStateInterface $form_state
-  )  : array {
+  ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
+
+    $defaultConfig = $this->defaultConfiguration();
 
     $form['is_production'] = [
       '#type' => 'checkbox',
@@ -183,13 +170,20 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#default_value' => $this->configuration['client_scopes'],
     ];
 
+    $form['environment_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('OpenID Connect Authorization server / Issuer.'),
+      '#description' => $this->t('Url to auth server.<br /> DEV: https://tunnistamo.test.hel.ninja<br /> PROD: https://api.hel.fi/sso <br />STAGE: https://api.hel.fi/sso-test'),
+      '#default_value' => (array_key_exists('environment_url',$this->configuration)) ? $this->configuration['environment_url'] : $defaultConfig['environment_url'],
+    ];
+
     return $form;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getClientScopes() : array {
+  public function getClientScopes(): array {
     $scopes = $this->configuration['client_scopes'];
 
     if (!$scopes) {
