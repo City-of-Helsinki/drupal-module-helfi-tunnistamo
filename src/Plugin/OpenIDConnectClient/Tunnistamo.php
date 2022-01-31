@@ -148,9 +148,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     FormStateInterface $form_state
   ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
-
-    $defaultConfig = $this->defaultConfiguration();
-
+    
     $form['is_production'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Use production environment'),
@@ -174,7 +172,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#type' => 'textfield',
       '#title' => $this->t('OpenID Connect Authorization server / Issuer.'),
       '#description' => $this->t('Url to auth server.<br /> DEV: https://tunnistamo.test.hel.ninja<br /> PROD: https://api.hel.fi/sso <br />STAGE: https://api.hel.fi/sso-test'),
-      '#default_value' => (array_key_exists('environment_url',$this->configuration)) ? $this->configuration['environment_url'] : $defaultConfig['environment_url'],
+      '#default_value' => $this->configuration['environment_url'],
     ];
 
     return $form;
