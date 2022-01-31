@@ -1,10 +1,11 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\GeneratedUrl;
 use Drupal\Core\Url;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
@@ -36,6 +37,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   public const PRODUCTION_ENVIRONMENT = 'https://api.hel.fi/sso';
 
   /**
+   * Whether to send silent authentication or not.
+   *
+   * @var bool
+   */
+  private bool $silentAuthentication = FALSE;
+
+  /**
    * The event dispatcher.
    *
    * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
@@ -48,8 +56,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   public static function create(
     ContainerInterface $container,
     array $configuration,
-    $plugin_id,
-    $plugin_definition
+                       $plugin_id,
+                       $plugin_definition
   ) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
@@ -59,10 +67,23 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   /**
    * {@inheritdoc}
    */
-  public function defaultConfiguration() : array {
+  public function defaultConfiguration(): array {
     return [
       'is_production' => FALSE,
+      'client_scopes' => 'openid,email',
+      'environment_url' => 'https://tunnistamo.test.hel.ninja',
+      'auto_login' => FALSE,
     ] + parent::defaultConfiguration();
+  }
+
+  /**
+   * Whether 'auto_login' setting is enabled or not.
+   *
+   * @return bool
+   *   TRUE if we should auto login.
+   */
+  public function autoLogin(): bool {
+    return (bool) $this->configuration['auto_login'];
   }
 
   /**
@@ -73,21 +94,55 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     array $options = []
   ): Url {
     $url = parent::getRedirectUrl($route_parameters, $options);
-    /** @var \Drupal\helfi_tunnistamo\Event\RedirectUrlEvent $dispachedUrl */
-    $dispachedUrl = $this->eventDispatcher->dispatch(new RedirectUrlEvent(
+    /** @var \Drupal\helfi_tunnistamo\Event\RedirectUrlEvent $urlEvent */
+    $urlEvent = $this->eventDispatcher->dispatch(new RedirectUrlEvent(
       $url,
       $this->requestStack->getCurrentRequest()
     ));
-    return $dispachedUrl->getRedirectUrl();
+    return $urlEvent->getRedirectUrl();
+  }
+
+  /**
+   * Attempt to authenticate silently without prompt.
+   *
+   * @return $this
+   *   The self.
+   */
+  public function setSilentAuthentication(): self {
+    $this->silentAuthentication = TRUE;
+    return $this;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getEndpoints() : array {
+  protected function getUrlOptions(
+    string $scope,
+    GeneratedUrl $redirect_uri
+  ): array {
+    $options = parent::getUrlOptions($scope, $redirect_uri);
+
+    if ($this->silentAuthentication) {
+      $options['query'] += [
+        'prompt' => 'none',
+      ];
+    }
+
+    return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEndpoints(): array {
+
     $base = $this->isProduction() ?
       self::PRODUCTION_ENVIRONMENT :
       self::TESTING_ENVIRONMENT;
+
+    if (!empty($this->configuration['environment_url'])) {
+      $base = $this->configuration['environment_url'];
+    }
 
     return [
       'authorization' => sprintf('%s/openid/authorize/', $base),
@@ -102,7 +157,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * @return bool
    *   TRUE if we're operating on production environment.
    */
-  public function isProduction() : bool {
+  public function isProduction(): bool {
     return (bool) $this->configuration['is_production'];
   }
 
@@ -112,7 +167,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   public function buildConfigurationForm(
     array $form,
     FormStateInterface $form_state
-  )  : array {
+  ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
 
     $form['is_production'] = [
@@ -121,18 +176,39 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#default_value' => $this->isProduction(),
     ];
 
+    $form['auto_login'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Auto login on 403 pages'),
+      '#default_value' => $this->configuration['auto_login'],
+    ];
+
+    $form['client_scopes'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Client scopes'),
+      '#description' => $this->t('A comma separated list of client scopes.'),
+      '#default_value' => $this->configuration['client_scopes'],
+    ];
+
+    $form['environment_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('OpenID Connect Authorization server / Issuer.'),
+      '#description' => $this->t('Url to auth server.<br /> DEV: https://tunnistamo.test.hel.ninja<br /> PROD: https://api.hel.fi/sso <br />STAGE: https://api.hel.fi/sso-test'),
+      '#default_value' => $this->configuration['environment_url'],
+    ];
+
     return $form;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getClientScopes() : array {
-    return [
-      'openid',
-      'email',
-      'ad_groups',
-    ];
+  public function getClientScopes(): array {
+    $scopes = $this->configuration['client_scopes'];
+
+    if (!$scopes) {
+      return ['openid', 'email', 'ad_groups'];
+    }
+    return explode(',', $this->configuration['client_scopes']);
   }
 
 }
