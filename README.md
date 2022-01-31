@@ -23,17 +23,17 @@ enable `tunnistamo` client from `/admin/config/services/openid-connect`.
 Add these to your local.settings.php:
 
 ```
-$config['openid_connect.settings.tunnistamo']['settings']['client_id'] = 'your-client-id';
-$config['openid_connect.settings.tunnistamo']['settings']['client_secret'] = 'your-client-secret';
-$config['openid_connect.settings.tunnistamo']['settings']['is_production'] = FALSE;
+$config['openid_connect.client.tunnistamo']['settings']['client_id'] = 'your-client-id';
+$config['openid_connect.client.tunnistamo']['settings']['client_secret'] = 'your-client-secret';
+$config['openid_connect.client.tunnistamo']['settings']['is_production'] = FALSE;
 ```
 
 ## Production environemnt
 
 ```
-$config['openid_connect.settings.tunnistamo']['settings']['client_id'] = getenv('TUNNISTAMO_CLIENT_ID');
-$config['openid_connect.settings.tunnistamo']['settings']['client_secret'] = getenv('TUNNISTAMO_CLIENT_SECRET');
-$config['openid_connect.settings.tunnistamo']['settings']['is_production'] = getenv('TUNNISTAMO_ENV') === 'production';;
+$config['openid_connect.client.tunnistamo']['settings']['client_id'] = getenv('TUNNISTAMO_CLIENT_ID');
+$config['openid_connect.client.tunnistamo']['settings']['client_secret'] = getenv('TUNNISTAMO_CLIENT_SECRET');
+$config['openid_connect.client.tunnistamo']['settings']['is_production'] = getenv('TUNNISTAMO_ENV') === 'production';;
 ```
 
 ## Contact
