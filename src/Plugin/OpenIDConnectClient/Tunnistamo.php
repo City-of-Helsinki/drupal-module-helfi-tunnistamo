@@ -23,6 +23,20 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 final class Tunnistamo extends OpenIDConnectClientBase {
 
   /**
+   * Testing environment address.
+   *
+   * @var string
+   */
+  public const TESTING_ENVIRONMENT = 'https://api.hel.fi/sso-test';
+
+  /**
+   * Production environment address.
+   *
+   * @var string
+   */
+  public const PRODUCTION_ENVIRONMENT = 'https://api.hel.fi/sso';
+
+  /**
    * Whether to send silent authentication or not.
    *
    * @var bool
@@ -41,7 +55,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public static function create(
     ContainerInterface $container,
-    array              $configuration,
+    array $configuration,
                        $plugin_id,
                        $plugin_definition
   ) {
@@ -55,11 +69,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function defaultConfiguration(): array {
     return [
-        'is_production' => FALSE,
-        'client_scopes' => 'openid,email',
-        'environment_url' => 'https://tunnistamo.test.hel.ninja',
-        'auto_login' => FALSE,
-      ] + parent::defaultConfiguration();
+      'is_production' => FALSE,
+      'client_scopes' => 'openid,email',
+      'environment_url' => 'https://tunnistamo.test.hel.ninja',
+      'auto_login' => FALSE,
+    ] + parent::defaultConfiguration();
   }
 
   /**
@@ -103,7 +117,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   protected function getUrlOptions(
-    string       $scope,
+    string $scope,
     GeneratedUrl $redirect_uri
   ): array {
     $options = parent::getUrlOptions($scope, $redirect_uri);
@@ -121,7 +135,14 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function getEndpoints(): array {
-    $base = $this->configuration['environment_url'];
+
+    $base = $this->isProduction() ?
+      self::PRODUCTION_ENVIRONMENT :
+      self::TESTING_ENVIRONMENT;
+
+    if (!empty($this->configuration['environment_url'])) {
+      $base = $this->configuration['environment_url'];
+    }
 
     return [
       'authorization' => sprintf('%s/openid/authorize/', $base),
@@ -144,11 +165,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(
-    array              $form,
+    array $form,
     FormStateInterface $form_state
   ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
-    
+
     $form['is_production'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Use production environment'),
