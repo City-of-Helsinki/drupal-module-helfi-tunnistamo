@@ -173,6 +173,19 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     $form = parent::buildConfigurationForm($form, $form_state);
 
     $roles = array_keys(Role::loadMultiple());
+    $roleOptions = [];
+    foreach ($roles as $rid => $name) {
+      $role = Role::load($name);
+      $roleOptions[$role->id()] = $role->label();
+    }
+
+    $rolesSelected = [];
+    if (is_string($this->configuration['client_roles'])) {
+      $rolesSelected = explode(',', $this->configuration['client_roles']);
+    }
+    else {
+      $rolesSelected = $this->configuration['client_roles'];
+    }
 
     $form['is_production'] = [
       '#type' => 'checkbox',
@@ -201,10 +214,12 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     ];
 
     $form['client_roles'] = [
-      '#type' => 'textfield',
+      '#type' => 'checkboxes',
+      '#multiple' => TRUE,
+      '#options' => $roleOptions,
       '#title' => $this->t('Client roles.'),
-      '#description' => $this->t('Comma separated list of roles to be assigned to users logged in with this client.<br /> %rolelist', ['%rolelist' => implode(',', $roles)]),
-      '#default_value' => $this->configuration['client_roles'],
+      '#description' => $this->t('Select roles to be assigned users logging in with this client.'),
+      '#default_value' => $rolesSelected,
     ];
 
     return $form;
