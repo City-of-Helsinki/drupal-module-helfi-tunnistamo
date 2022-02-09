@@ -1,0 +1,46 @@
+<?php
+
+use Drupal\user\UserInterface;
+
+/**
+ * OpenID Connect post authorize hook.
+ *
+ * This hook runs after a user has been authorized and claims have been mapped
+ * to the user's account.
+ *
+ * A popular use case for this hook is to saving token and additional identity
+ * provider related information to the user's Drupal session (private temp
+ * store).
+ *
+ * @param \Drupal\user\UserInterface $account
+ *   User account object of the authorized user.
+ * @param array $context
+ *   An associative array with context information:
+ *   - tokens:         An array of tokens.
+ *   - user_data:      An array of user and session data.*
+ *   - plugin_id:      The plugin identifier.
+ *   - sub:            The remote user identifier.
+ *
+ * @ingroup openid_connect_api
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) {
+
+  $pluginConfigName = 'openid_connect.client.' . $context["plugin_id"];
+
+  /** @var \Drupal\Core\Config\ImmutableConfig $config */
+  $config = \Drupal::configFactory()->get($pluginConfigName)->get('settings');
+
+  // First remove all existing roles
+  $accountRoles = $account->getRoles(true);
+  foreach ($accountRoles as $role) {
+    $account->removeRole($role);
+  }
+
+  if (isset($config['client_roles']) && !empty($config['client_roles'])) {
+    foreach (explode(',',$config['client_roles']) as $role) {
+      $account->addRole($role);
+    }
+    $account->save();
+  }
+}
