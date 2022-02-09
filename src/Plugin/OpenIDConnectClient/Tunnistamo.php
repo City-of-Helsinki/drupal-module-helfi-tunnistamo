@@ -9,6 +9,7 @@ use Drupal\Core\GeneratedUrl;
 use Drupal\Core\Url;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
+use Drupal\user\Entity\Role;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -73,6 +74,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       'client_scopes' => 'openid,email',
       'environment_url' => 'https://tunnistamo.test.hel.ninja',
       'auto_login' => FALSE,
+      'client_roles' => '',
     ] + parent::defaultConfiguration();
   }
 
@@ -170,6 +172,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
 
+    $roles = array_keys(Role::loadMultiple());
+
     $form['is_production'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Use production environment'),
@@ -196,6 +200,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#default_value' => $this->configuration['environment_url'],
     ];
 
+    $form['client_roles'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Client roles.'),
+      '#description' => $this->t('Comma separated list of roles to be assigned to users logged in with this client.<br /> %rolelist', ['%rolelist' => implode(',', $roles)]),
+      '#default_value' => $this->configuration['client_roles'],
+    ];
+
     return $form;
   }
 
@@ -209,6 +220,18 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       return ['openid', 'email', 'ad_groups'];
     }
     return explode(',', $this->configuration['client_scopes']);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getClientRoles(): array {
+    $roles = $this->configuration['client_roles'];
+
+    if (!$roles) {
+      return [];
+    }
+    return explode(',', $this->configuration['client_roles']);
   }
 
 }

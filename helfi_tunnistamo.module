@@ -1,0 +1,29 @@
+<?php
+
+use Drupal\user\UserInterface;
+
+/**
+ * {@inheritdoc}
+ */
+function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) {
+
+  $pluginConfigName = 'openid_connect.client.' . $context["plugin_id"];
+
+  /** @var \Drupal\Core\Config\ImmutableConfig $config */
+  $config = \Drupal::configFactory()->get($pluginConfigName)->get('settings');
+
+  if (isset($config['client_roles']) && !empty($config['client_roles'])) {
+
+    // First remove all existing roles
+    $accountRoles = $account->getRoles(TRUE);
+    foreach ($accountRoles as $role) {
+      $account->removeRole($role);
+    }
+
+    // Then add new ones from plugin config.
+    foreach (explode(',', $config['client_roles']) as $role) {
+      $account->addRole($role);
+    }
+    $account->save();
+  }
+}
