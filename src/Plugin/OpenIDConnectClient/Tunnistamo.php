@@ -6,10 +6,12 @@ namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\GeneratedUrl;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
+use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -57,8 +59,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   public static function create(
     ContainerInterface $container,
     array $configuration,
-                       $plugin_id,
-                       $plugin_definition
+    $plugin_id,
+    $plugin_definition
   ) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
@@ -74,7 +76,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       'client_scopes' => 'openid,email',
       'environment_url' => 'https://tunnistamo.test.hel.ninja',
       'auto_login' => FALSE,
-      'client_roles' => '',
+      'client_roles' => [],
     ] + parent::defaultConfiguration();
   }
 
@@ -172,21 +174,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
 
-    $roles = array_keys(Role::loadMultiple());
-    $roleOptions = [];
-    foreach ($roles as $rid => $name) {
-      $role = Role::load($name);
-      $roleOptions[$role->id()] = $role->label();
-    }
-
-    $rolesSelected = [];
-    if (is_string($this->configuration['client_roles'])) {
-      $rolesSelected = explode(',', $this->configuration['client_roles']);
-    }
-    else {
-      $rolesSelected = $this->configuration['client_roles'];
-    }
-
     $form['is_production'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Use production environment'),
@@ -213,16 +200,73 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#default_value' => $this->configuration['environment_url'],
     ];
 
+    $roleOptions = [];
+    foreach (Role::loadMultiple() ?? [] as $role) {
+      // Skip anonymous role, but leave authenticated user role, so we can
+      // use it to remove all other roles in case someone wants to use this
+      // feature to remove manually given roles on login.
+      if (in_array($role->id(), [
+        AccountInterface::ANONYMOUS_ROLE,
+      ])) {
+        continue;
+      }
+      $roleOptions[$role->id()] = $role->label();
+    }
+
     $form['client_roles'] = [
       '#type' => 'checkboxes',
       '#multiple' => TRUE,
       '#options' => $roleOptions,
       '#title' => $this->t('Client roles.'),
       '#description' => $this->t('Select roles to be assigned users logging in with this client.'),
-      '#default_value' => $rolesSelected,
+      '#default_value' => $this->getClientRoles(),
     ];
 
     return $form;
+  }
+
+  /**
+   * Remove existing and map new roles based on plugin configuration.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The account to map roles to.
+   */
+  public function mapRoles(UserInterface $account) : void {
+    // Skip role mapping if no roles are set, so we don't remove
+    // any manually set roles when this feature is not enabled.
+    if (!$roles = $this->getClientRoles()) {
+      return;
+    }
+
+    // Remove all existing roles.
+    array_map(
+      fn (string $rid) => $account->removeRole($rid),
+      $account->getRoles(FALSE)
+    );
+
+    // Add new roles from plugin config.
+    array_map(function (string $rid) use ($account) {
+      // Trying to add authenticated or anonymous role will throw an
+      // exception.
+      if (in_array($rid, [
+        AccountInterface::AUTHENTICATED_ROLE,
+        AccountInterface::ANONYMOUS_ROLE,
+      ])) {
+        return;
+      }
+      $account->addRole($rid);
+    }, $roles);
+    $account->save();
+  }
+
+  /**
+   * Gets the configured client roles.
+   *
+   * @return array
+   *   An array of enabled client roles.
+   */
+  public function getClientRoles() : ? array {
+    return $this->configuration['client_roles'];
   }
 
   /**
@@ -235,18 +279,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       return ['openid', 'email', 'ad_groups'];
     }
     return explode(',', $this->configuration['client_scopes']);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getClientRoles(): array {
-    $roles = $this->configuration['client_roles'];
-
-    if (!$roles) {
-      return [];
-    }
-    return explode(',', $this->configuration['client_roles']);
   }
 
 }

@@ -10,3 +10,7 @@ settings:
   is_production: 0
   client_id: placeholder
   client_secret: placeholder
+  client_scopes: 'openid,email'
+  auto_login: 0
+  client_roles: []
+  environment_url: ''
