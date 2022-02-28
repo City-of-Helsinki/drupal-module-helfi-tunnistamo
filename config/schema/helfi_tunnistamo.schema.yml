@@ -11,3 +11,17 @@ openid_connect.client.plugin.tunnistamo:
     client_secret:
       type: string
       label: 'Client secret'
+    auto_login:
+      type: integer
+      label: 'Whether to log in automatically on 403 pages'
+    environment_url:
+      type: string
+      label: 'Environment URL'
+    client_scopes:
+      type: string
+      label: 'Client scopes'
+    client_roles:
+      type: sequence
+      label: 'Client roles to automatically map to user using this client'
+      sequence:
+        type: string

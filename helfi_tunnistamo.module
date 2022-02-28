@@ -1,0 +1,17 @@
+<?php
+
+use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
+use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
+use Drupal\user\UserInterface;
+
+/**
+ * {@inheritdoc}
+ */
+function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) {
+  $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
+
+  if (!$plugin instanceof Tunnistamo) {
+    return;
+  }
+  $plugin->mapRoles($account);
+}
