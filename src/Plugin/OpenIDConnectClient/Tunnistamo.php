@@ -87,7 +87,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *   TRUE if we should auto login.
    */
   public function autoLogin(): bool {
-    return (bool) $this->configuration['auto_login'];
+    return (bool) $this->configuration['auto_login'] ?? FALSE;
   }
 
   /**
@@ -266,14 +266,14 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *   An array of enabled client roles.
    */
   public function getClientRoles() : ? array {
-    return $this->configuration['client_roles'];
+    return $this->configuration['client_roles'] ?? NULL;
   }
 
   /**
    * {@inheritdoc}
    */
   public function getClientScopes(): array {
-    $scopes = $this->configuration['client_scopes'];
+    $scopes = $this->configuration['client_scopes'] ?? [];
 
     if (!$scopes) {
       return ['openid', 'email', 'ad_groups'];
