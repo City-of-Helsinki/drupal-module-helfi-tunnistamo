@@ -18,22 +18,12 @@ enable `tunnistamo` client from `/admin/config/services/openid-connect`.
 
 `https://example.com/openid-connect/tunnistamo`
 
-## Local development. 
-
-Add these to your local.settings.php:
-
-```
-$config['openid_connect.client.tunnistamo']['settings']['client_id'] = 'your-client-id';
-$config['openid_connect.client.tunnistamo']['settings']['client_secret'] = 'your-client-secret';
-$config['openid_connect.client.tunnistamo']['settings']['is_production'] = FALSE;
-```
-
-## Production environemnt
+## Overriding credentials from environment variables
 
 ```
 $config['openid_connect.client.tunnistamo']['settings']['client_id'] = getenv('TUNNISTAMO_CLIENT_ID');
 $config['openid_connect.client.tunnistamo']['settings']['client_secret'] = getenv('TUNNISTAMO_CLIENT_SECRET');
-$config['openid_connect.client.tunnistamo']['settings']['is_production'] = getenv('TUNNISTAMO_ENV') === 'production';;
+$config['openid_connect.client.tunnistamo']['settings']['environment_url'] = getenv('TUNNISTAMO_ENVIRONMENT_URL');
 ```
 
 ## Contact
