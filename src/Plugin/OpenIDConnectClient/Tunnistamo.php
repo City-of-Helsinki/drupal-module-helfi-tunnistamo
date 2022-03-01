@@ -61,7 +61,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     array $configuration,
     $plugin_id,
     $plugin_definition
-  ) {
+  ) : self {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
     return $instance;
@@ -81,13 +81,20 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function setConfiguration(array $configuration) : void {
+    $this->configuration = array_merge($this->defaultConfiguration(), $configuration);
+  }
+
+  /**
    * Whether 'auto_login' setting is enabled or not.
    *
    * @return bool
    *   TRUE if we should auto login.
    */
   public function autoLogin(): bool {
-    return (bool) $this->configuration['auto_login'] ?? FALSE;
+    return (bool) $this->configuration['auto_login'];
   }
 
   /**
@@ -205,9 +212,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       // Skip anonymous role, but leave authenticated user role, so we can
       // use it to remove all other roles in case someone wants to use this
       // feature to remove manually given roles on login.
-      if (in_array($role->id(), [
-        AccountInterface::ANONYMOUS_ROLE,
-      ])) {
+      if ($role->id() === AccountInterface::ANONYMOUS_ROLE) {
         continue;
       }
       $roleOptions[$role->id()] = $role->label();
@@ -262,7 +267,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   /**
    * Gets the configured client roles.
    *
-   * @return array
+   * @return null|array
    *   An array of enabled client roles.
    */
   public function getClientRoles() : ? array {
