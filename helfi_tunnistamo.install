@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Contains installation tasks for 'helfi_tunnistamo' module.
+ */
+
+declare(strict_types = 1);
+
+/**
+ * Implements hook_install().
+ */
+function helfi_tunnistamo_install() : void {
+  // Enable tunnistamo login button by default.
+  \Drupal::configFactory()
+    ->getEditable('openid_connect.settings')
+    ->set('override_registration_settings', TRUE)
+    ->set('user_login_display', 'below')
+    ->save();
+}
