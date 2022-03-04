@@ -74,7 +74,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     return [
       'is_production' => FALSE,
       'client_scopes' => 'openid,email',
-      'environment_url' => 'https://tunnistamo.test.hel.ninja',
+      'environment_url' => '',
       'auto_login' => FALSE,
       'client_roles' => [],
     ] + parent::defaultConfiguration();
