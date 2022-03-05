@@ -17,8 +17,8 @@ class ConfigTest extends KernelTestBase {
    * Make sure tunnistamo is enabled by default.
    */
   public function testEnable() : void {
-    $config = $this->getPluginConfiguration()
-      ->get('settings');
+    $config = $this->getPlugin()
+      ->getConfiguration();
     $this->assertEquals('placeholder', $config['client_id']);
     $this->assertEquals('placeholder', $config['client_secret']);
     $this->assertEquals(0, $config['auto_login']);
@@ -44,6 +44,14 @@ class ConfigTest extends KernelTestBase {
    */
   public function testEndpoints() : void {
     // Endpoint should default to testing environment.
+    $this->assertEndpoint(Tunnistamo::TESTING_ENVIRONMENT);
+    // Make sure if we remove the environment_url setting altogether the
+    // fallback default value still fallbacks to testing env.
+    $config = $this->getPluginConfiguration();
+    $settings = $config->get('settings');
+    unset($settings['environment_url']);
+    $config->set('settings', $settings)->save();
+
     $this->assertEndpoint(Tunnistamo::TESTING_ENVIRONMENT);
 
     // Endpoint should default to production environment when 'is_production' is
