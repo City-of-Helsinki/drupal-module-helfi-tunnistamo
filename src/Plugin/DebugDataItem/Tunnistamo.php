@@ -17,15 +17,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   description = @Translation("Tunnistamo")
  * )
  */
-class Tunnistamo extends DebugDataItemPluginBase implements ContainerFactoryPluginInterface {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static($configuration, $plugin_id, $plugin_definition);
-  }
-
+class Tunnistamo extends DebugDataItemPluginBase {
+  
   /**
    * {@inheritdoc}
    */
