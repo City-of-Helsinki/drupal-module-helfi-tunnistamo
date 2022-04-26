@@ -4,9 +4,7 @@ declare(strict_types = 1);
 
 namespace Drupal\helfi_tunnistamo\Plugin\DebugDataItem;
 
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\helfi_api_base\DebugDataItemPluginBase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Plugin implementation of the debug_data_item.
@@ -18,7 +16,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class Tunnistamo extends DebugDataItemPluginBase {
-  
+
   /**
    * {@inheritdoc}
    */
