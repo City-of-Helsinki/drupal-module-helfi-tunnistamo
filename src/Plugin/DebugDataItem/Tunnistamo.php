@@ -19,6 +19,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class Tunnistamo extends DebugDataItemPluginBase implements ContainerFactoryPluginInterface {
+
   /**
    * {@inheritdoc}
    */
@@ -36,9 +37,10 @@ class Tunnistamo extends DebugDataItemPluginBase implements ContainerFactoryPlug
     ];
 
     foreach ($data as $key => $value) {
-      $data[$key] = (bool)getenv($key);
+      $data[$key] = (bool) getenv($key);
     }
 
     return $data;
   }
+
 }
