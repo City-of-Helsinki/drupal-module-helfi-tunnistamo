@@ -5,7 +5,6 @@ declare(strict_types = 1);
 namespace Drupal\helfi_tunnistamo\Plugin\DebugDataItem;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\helfi_api_base\Annotation\DebugDataItem;
 use Drupal\helfi_api_base\DebugDataItemPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
