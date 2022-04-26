@@ -30,14 +30,9 @@ class Tunnistamo extends DebugDataItemPluginBase implements ContainerFactoryPlug
    * {@inheritdoc}
    */
   public function collect(): array {
-    $data = [
-      'TUNNISTAMO_CLIENT_ID' => FALSE,
-      'TUNNISTAMO_CLIENT_SECRET' => FALSE,
-    ];
-
-    foreach ($data as $key => $value) {
-      $data[$key] = (bool) getenv($key);
-    }
+    $data['TUNNISTAMO_CLIENT_ID'] = getenv('TUNNISTAMO_CLIENT_ID');
+    $data['TUNNISTAMO_CLIENT_SECRET'] = getenv('TUNNISTAMO_CLIENT_SECRET')
+      ? 'TRUE' : 'FALSE';
 
     return $data;
   }
