@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * @file
+ * Contains alterations for the Hel.fi tunnistamo module.
+ */
+
+declare(strict_types = 1);
+
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Drupal\user\UserInterface;
