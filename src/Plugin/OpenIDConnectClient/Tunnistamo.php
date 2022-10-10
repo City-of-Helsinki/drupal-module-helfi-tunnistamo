@@ -235,6 +235,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *
    * @param \Drupal\user\UserInterface $account
    *   The account to map roles to.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function mapRoles(UserInterface $account) : void {
     // Skip role mapping if no roles are set, so we don't remove
@@ -245,7 +247,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
 
     // Remove all existing roles.
     array_map(
-      fn (string $rid) => $account->removeRole($rid),
+      function (string $rid) use($roles, $account) {
+        if ($roles[$rid] != '0') {
+          $account->removeRole($rid);
+        }
+      },
       $account->getRoles(FALSE)
     );
 
