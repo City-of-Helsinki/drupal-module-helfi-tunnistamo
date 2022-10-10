@@ -273,8 +273,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *   An array of enabled client roles.
    */
   public function getClientRoles() : ?array {
-    $client_roles = array_filter($this->configuration['client_roles']);
-    return !empty($client_roles) ? $client_roles : NULL;
+    return array_filter($this->configuration['client_roles'] ?? []);
   }
 
   /**
