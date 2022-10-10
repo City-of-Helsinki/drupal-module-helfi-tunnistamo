@@ -6,6 +6,7 @@ env:
   DRUPAL_CORE_VERSION: 9.4.x
   SYMFONY_DEPRECATIONS_HELPER: disabled
   BROWSERTEST_OUTPUT_DIRECTORY: 'sites/simpletest'
+  OPTIONAL_DEPENDENCIES: drupal/helfi_api_base
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -51,6 +52,8 @@ jobs:
           composer require "drush/drush ^10.0"
           composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer require --dev "drupal/coder"
+          # Install defined optional dependencies.
+          composer require $OPTIONAL_DEPENDENCIES -W
 
       - name: Install Drupal
         run: |
