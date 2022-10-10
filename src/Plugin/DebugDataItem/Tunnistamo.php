@@ -5,6 +5,8 @@ declare(strict_types = 1);
 namespace Drupal\helfi_tunnistamo\Plugin\DebugDataItem;
 
 use Drupal\helfi_api_base\DebugDataItemPluginBase;
+use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo as TunnistamoClient;
+use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 
 /**
  * Plugin implementation of the debug_data_item.
@@ -15,15 +17,27 @@ use Drupal\helfi_api_base\DebugDataItemPluginBase;
  *   description = @Translation("Tunnistamo")
  * )
  */
-class Tunnistamo extends DebugDataItemPluginBase {
+final class Tunnistamo extends DebugDataItemPluginBase {
 
   /**
    * {@inheritdoc}
    */
   public function collect(): array {
-    $data['TUNNISTAMO_CLIENT_ID'] = getenv('TUNNISTAMO_CLIENT_ID');
-    $data['TUNNISTAMO_CLIENT_SECRET'] = getenv('TUNNISTAMO_CLIENT_SECRET')
-      ? 'TRUE' : 'FALSE';
+    $data = [];
+
+    foreach (OpenIDConnectClientEntity::loadMultiple() as $client) {
+      if (!$client->getPlugin() instanceof TunnistamoClient) {
+        continue;
+      }
+      $configuration = $client->getPlugin()->getConfiguration();
+      $status = 'Not configured';
+
+      if (isset($configuration['client_id'], $configuration['client_secret'])) {
+        $status = $configuration['client_id'];
+      }
+
+      $data[$client->getPluginId()] = $status;
+    }
 
     return $data;
   }
