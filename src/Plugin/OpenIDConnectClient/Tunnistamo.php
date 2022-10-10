@@ -247,11 +247,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
 
     // Remove all existing roles.
     array_map(
-      function (string $rid) use($roles, $account) {
-        if ($roles[$rid] != '0') {
-          $account->removeRole($rid);
-        }
-      },
+      fn (string $rid) => $account->removeRole($rid),
       $account->getRoles(FALSE)
     );
 
@@ -276,8 +272,9 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * @return null|array
    *   An array of enabled client roles.
    */
-  public function getClientRoles() : ? array {
-    return $this->configuration['client_roles'] ?? NULL;
+  public function getClientRoles() : ?array {
+    $client_roles = array_filter($this->configuration['client_roles']);
+    return !empty($client_roles) ? $client_roles : NULL;
   }
 
   /**
