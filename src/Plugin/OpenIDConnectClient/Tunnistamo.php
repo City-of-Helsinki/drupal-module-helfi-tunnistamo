@@ -199,7 +199,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#description' => $this->t('A comma separated list of client scopes.'),
       '#default_value' => $this->configuration['client_scopes'],
       '#size' => 255,
-      '#maxlength' => 255
+      '#maxlength' => 255,
     ];
 
     $form['environment_url'] = [
@@ -208,7 +208,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#description' => $this->t('Url to auth server.<br /> DEV: https://tunnistamo.test.hel.ninja<br /> PROD: https://api.hel.fi/sso <br />STAGE: https://api.hel.fi/sso-test'),
       '#default_value' => $this->configuration['environment_url'],
       '#size' => 255,
-      '#maxlength' => 255
+      '#maxlength' => 255,
     ];
 
     $roleOptions = [];
