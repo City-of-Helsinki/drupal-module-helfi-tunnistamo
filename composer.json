@@ -5,7 +5,7 @@
     "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
     "require": {
-        "drupal/openid_connect": "^2.0"
+        "drupal/openid_connect": "^3.0"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
