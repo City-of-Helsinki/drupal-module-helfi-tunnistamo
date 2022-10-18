@@ -17,6 +17,7 @@ class LoginFormTest extends BrowserTestBase {
    * {@inheritdoc}
    */
   protected static $modules = [
+    'file',
     'openid_connect',
     'helfi_tunnistamo',
   ];
