@@ -21,6 +21,7 @@ abstract class KernelTestBase extends CoreKernelTestBase {
     'system',
     'helfi_tunnistamo',
     'externalauth',
+    'file',
     'openid_connect',
     'user',
   ];
