@@ -14,7 +14,6 @@ function helfi_tunnistamo_install() : void {
   \Drupal::configFactory()
     ->getEditable('openid_connect.settings')
     ->set('override_registration_settings', TRUE)
-    ->set('connect_existing_users', FALSE)
     // Enable tunnistamo login button by default.
     ->set('user_login_display', 'below')
     // Logout from openid connect provider by default.
@@ -28,7 +27,6 @@ function helfi_tunnistamo_install() : void {
 function helfi_tunnistamo_update_9001() : void {
   Drupal::configFactory()
     ->getEditable('openid_connect.settings')
-    ->set('connect_existing_users', FALSE)
     ->set('end_session_enabled', TRUE)
     ->save();
 
