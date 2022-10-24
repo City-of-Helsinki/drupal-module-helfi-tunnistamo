@@ -19,6 +19,7 @@ abstract class KernelTestBase extends CoreKernelTestBase {
    */
   protected static $modules = [
     'system',
+    'helfi_api_base',
     'helfi_tunnistamo',
     'externalauth',
     'file',

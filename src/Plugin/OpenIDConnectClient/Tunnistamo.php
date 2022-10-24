@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\GeneratedUrl;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
+use Drupal\helfi_api_base\Environment\EnvironmentResolverInterface;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
@@ -25,18 +26,8 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  */
 final class Tunnistamo extends OpenIDConnectClientBase {
 
-  /**
-   * Testing environment address.
-   *
-   * @var string
-   */
-  public const TESTING_ENVIRONMENT = 'https://api.hel.fi/sso-test';
-
-  /**
-   * Production environment address.
-   *
-   * @var string
-   */
+  public const TESTING_ENVIRONMENT = 'https://tunnistamo.test.hel.ninja';
+  public const STAGING_ENVIRONMENT = 'https://api.hel.fi/sso-test';
   public const PRODUCTION_ENVIRONMENT = 'https://api.hel.fi/sso';
 
   /**
@@ -54,6 +45,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   private EventDispatcherInterface $eventDispatcher;
 
   /**
+   * The environment resolver.
+   *
+   * @var \Drupal\helfi_api_base\Environment\EnvironmentResolverInterface
+   */
+  private EnvironmentResolverInterface $environmentResolver;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(
@@ -64,6 +62,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   ) : self {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
+    $instance->environmentResolver = $container->get('helfi_api_base.environment_resolver');
     return $instance;
   }
 
@@ -72,7 +71,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function defaultConfiguration(): array {
     return [
-      'is_production' => FALSE,
       'client_scopes' => 'openid,email',
       'environment_url' => '',
       'auto_login' => FALSE,
@@ -146,11 +144,26 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function getEndpoints(): array {
+    $endpointMap = [
+      'dev' => self::TESTING_ENVIRONMENT,
+      'test' => self::TESTING_ENVIRONMENT,
+      'stage' => self::STAGING_ENVIRONMENT,
+      'prod' => self::PRODUCTION_ENVIRONMENT,
+    ];
+    $base = self::STAGING_ENVIRONMENT;
 
-    $base = $this->isProduction() ?
-      self::PRODUCTION_ENVIRONMENT :
-      self::TESTING_ENVIRONMENT;
+    try {
+      // Attempt to automatically detect endpoint.
+      $env = $this->environmentResolver->getActiveEnvironmentName();
 
+      if (isset($endpointMap[$env])) {
+        $base = $endpointMap[$env];
+      }
+    }
+    catch (\InvalidArgumentException) {
+    }
+    // Allow environment_url config to always override automatically detected
+    // endpoint.
     if (!empty($this->configuration['environment_url'])) {
       $base = $this->configuration['environment_url'];
     }
@@ -159,17 +172,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       'authorization' => sprintf('%s/openid/authorize/', $base),
       'token' => sprintf('%s/openid/token/', $base),
       'userinfo' => sprintf('%s/openid/userinfo/', $base),
+      'end_session' => sprintf('%s/openid/end-session', $base),
     ];
-  }
-
-  /**
-   * Checks whether we're operating on production environment.
-   *
-   * @return bool
-   *   TRUE if we're operating on production environment.
-   */
-  public function isProduction(): bool {
-    return (bool) $this->configuration['is_production'];
   }
 
   /**
@@ -180,12 +184,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     FormStateInterface $form_state
   ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
-
-    $form['is_production'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Use production environment'),
-      '#default_value' => $this->isProduction(),
-    ];
 
     $form['auto_login'] = [
       '#type' => 'checkbox',
@@ -205,7 +203,20 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     $form['environment_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('OpenID Connect Authorization server / Issuer.'),
-      '#description' => $this->t('Url to auth server.<br /> DEV: https://tunnistamo.test.hel.ninja<br /> PROD: https://api.hel.fi/sso <br />STAGE: https://api.hel.fi/sso-test'),
+      '#description' => [
+        [
+          '#markup' => $this->t('Url to auth server. Leave this empty to detect environment automatically. See README.md for more information.'),
+        ],
+        [
+          '#theme' => 'item_list',
+          '#items' => [
+            sprintf('DEV: %s', self::TESTING_ENVIRONMENT),
+            sprintf('TEST: %s', self::TESTING_ENVIRONMENT),
+            sprintf('STAGE: %s', self::STAGING_ENVIRONMENT),
+            sprintf('PROD: %s', self::PRODUCTION_ENVIRONMENT),
+          ],
+        ],
+      ],
       '#default_value' => $this->configuration['environment_url'],
       '#size' => 255,
       '#maxlength' => 255,

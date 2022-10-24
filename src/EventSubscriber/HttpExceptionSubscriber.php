@@ -45,14 +45,14 @@ final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
   /**
    * {@inheritdoc}
    */
-  protected static function getPriority() {
+  protected static function getPriority() : int {
     return 200;
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function getHandledFormats() {
+  protected function getHandledFormats() : array {
     return ['html'];
   }
 

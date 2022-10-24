@@ -18,6 +18,12 @@ enable `tunnistamo` client from `/admin/config/services/openid-connect`.
 
 `https://example.com/openid-connect/tunnistamo`
 
+## Detect Tunnistamo environment automatically
+
+Leave `environment_url` configuration empty and populate required `helfi_api_base.environment_resolver.settings` configuration.
+
+See [Environment resolver documentation](https://github.com/City-of-Helsinki/drupal-module-helfi-api-base/blob/main/documentation/environment-resolver.md#active-environment) for more information.
+
 ## Overriding credentials from environment variables
 
 ```
