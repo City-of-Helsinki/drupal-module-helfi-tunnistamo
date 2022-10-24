@@ -40,6 +40,9 @@ class HttpExceptionSubscriberTest extends KernelTestBase {
     $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
   }
 
+  /**
+   * Tests auto-login on 403 pages.
+   */
   public function testAutologinRedirect() : void {
     $this->setPluginConfiguration('auto_login', TRUE);
     $request = Request::create('/admin');
@@ -50,7 +53,7 @@ class HttpExceptionSubscriberTest extends KernelTestBase {
   }
 
   /**
-   * Tests auto-login when page is served via iframe.
+   * Tests auto-login when 403 page is served via iframe.
    */
   public function testAutologinRedirectIframe() : void {
     $this->setPluginConfiguration('auto_login', TRUE);

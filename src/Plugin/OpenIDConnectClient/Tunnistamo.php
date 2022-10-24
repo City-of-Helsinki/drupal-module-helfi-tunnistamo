@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\GeneratedUrl;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\helfi_api_base\Environment\EnvironmentResolverInterface;
