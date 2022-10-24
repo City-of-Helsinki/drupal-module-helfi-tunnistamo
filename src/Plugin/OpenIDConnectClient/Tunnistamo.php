@@ -15,6 +15,7 @@ use Drupal\user\Entity\Role;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Implements OpenID Connect Client plugin for Tunnistamo.
@@ -125,19 +126,14 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   /**
    * {@inheritdoc}
    */
-  protected function getUrlOptions(
-    string $scope,
-    GeneratedUrl $redirect_uri
-  ): array {
-    $options = parent::getUrlOptions($scope, $redirect_uri);
-
+  public function authorize(
+    string $scope = 'openid email',
+    array $additional_params = []
+  ): Response {
     if ($this->silentAuthentication) {
-      $options['query'] += [
-        'prompt' => 'none',
-      ];
+      $additional_params['prompt'] = 'none';
     }
-
-    return $options;
+    return parent::authorize($scope, $additional_params);
   }
 
   /**
