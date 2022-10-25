@@ -91,7 +91,7 @@ final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
     if (
       $event->getRequest()->query->get('error') ||
       $this->accountProxy->isAuthenticated() ||
-      $this->session->retrieveStateToken(TRUE)
+      $this->session->retrieveStateToken()
     ) {
       return;
     }
