@@ -10,12 +10,18 @@ use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 /**
  * Tests Tunnistamo configuration.
  *
+ * @coversDefaultClass \Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo
  * @group helfi_tunnistamo
  */
-class ConfigTest extends KernelTestBase {
+class TunnistamoClientTest extends KernelTestBase {
 
   /**
    * Make sure Tunnistamo is enabled by default.
+   *
+   * @covers ::getConfiguration
+   * @covers ::defaultConfiguration
+   * @covers ::create
+   * @covers ::setConfiguration
    */
   public function testEnable() : void {
     $config = $this->getPlugin()

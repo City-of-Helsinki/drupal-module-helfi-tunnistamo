@@ -8,6 +8,8 @@ use Drupal\Core\Config\Config;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\KernelTests\KernelTestBase as CoreKernelTestBase;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Kernel test base for tunnistamo.
@@ -70,6 +72,20 @@ abstract class KernelTestBase extends CoreKernelTestBase {
     $settings = $this->getPluginConfiguration()->get('settings');
     $settings[$key] = $value;
     $this->getPluginConfiguration()->set('settings', $settings)->save();
+  }
+
+  /**
+   * Run given response through the http kernel.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   The handled response.
+   */
+  protected function getHttpKernelResponse(Request $request) : Response {
+    $http_kernel = $this->container->get('http_kernel');
+    return $http_kernel->handle($request);
   }
 
 }

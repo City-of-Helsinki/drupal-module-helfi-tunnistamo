@@ -17,20 +17,6 @@ use Symfony\Component\HttpFoundation\Response;
 class HttpExceptionSubscriberTest extends KernelTestBase {
 
   /**
-   * Run given response through the http kernel.
-   *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The request.
-   *
-   * @return \Symfony\Component\HttpFoundation\Response
-   *   The handled response.
-   */
-  private function getHttpKernelResponse(Request $request) : Response {
-    $http_kernel = $this->container->get('http_kernel');
-    return $http_kernel->handle($request);
-  }
-
-  /**
    * Make sure no redirect response is sent when auto-login is not enabled.
    */
   public function testAutologinDisabled() : void {
