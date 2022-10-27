@@ -4,17 +4,24 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
+use Drupal\helfi_api_base\Environment\EnvironmentResolver;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 
 /**
  * Tests Tunnistamo configuration.
  *
+ * @coversDefaultClass \Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo
  * @group helfi_tunnistamo
  */
-class ConfigTest extends KernelTestBase {
+class TunnistamoClientTest extends KernelTestBase {
 
   /**
-   * Make sure tunnistamo is enabled by default.
+   * Make sure Tunnistamo is enabled by default.
+   *
+   * @covers ::getConfiguration
+   * @covers ::defaultConfiguration
+   * @covers ::create
+   * @covers ::setConfiguration
    */
   public function testEnable() : void {
     $config = $this->getPlugin()
@@ -23,7 +30,6 @@ class ConfigTest extends KernelTestBase {
     $this->assertEquals('placeholder', $config['client_secret']);
     $this->assertEquals(0, $config['auto_login']);
     $this->assertEquals([], $config['client_roles']);
-    $this->assertEquals(0, $config['is_production']);
     $this->assertEquals('', $config['environment_url']);
   }
 
@@ -40,30 +46,54 @@ class ConfigTest extends KernelTestBase {
   }
 
   /**
+   * Sets the active environment name.
+   *
+   * @param string $env
+   *   The env name.
+   */
+  private function setActiveEnvironmentName(string $env) : void {
+    $config = $this->config('helfi_api_base.environment_resolver.settings');
+    $config
+      ->set(EnvironmentResolver::ENVIRONMENT_NAME_KEY, $env)
+      ->save();
+    $this->container->get('kernel')->rebuildContainer();
+  }
+
+  /**
    * Tests environment url configuration.
    */
   public function testEndpoints() : void {
-    // Endpoint should default to testing environment.
-    $this->assertEndpoint(Tunnistamo::TESTING_ENVIRONMENT);
+    // Endpoint should default to staging environment.
+    $this->assertEndpoint(Tunnistamo::STAGING_ENVIRONMENT);
     // Make sure if we remove the environment_url setting altogether the
-    // fallback default value still fallbacks to testing env.
+    // default value still fallbacks to testing env.
     $config = $this->getPluginConfiguration();
     $settings = $config->get('settings');
     unset($settings['environment_url']);
     $config->set('settings', $settings)->save();
 
-    $this->assertEndpoint(Tunnistamo::TESTING_ENVIRONMENT);
-
-    // Endpoint should default to production environment when 'is_production' is
-    // set to true.
-    $this->setPluginConfiguration('is_production', TRUE);
-    $this->assertEndpoint(Tunnistamo::PRODUCTION_ENVIRONMENT);
+    $this->assertEndpoint(Tunnistamo::STAGING_ENVIRONMENT);
 
     // Endpoint should default to whatever we set as base url in
     // 'environment_url'.
-    $this->setPluginConfiguration('is_production', FALSE);
     $this->setPluginConfiguration('environment_url', 'https://example.com');
     $this->assertEndpoint('https://example.com');
+  }
+
+  /**
+   * Tests environment auto-detection.
+   */
+  public function testEndpointAutodetect() : void {
+    $envs = [
+      'dev' => Tunnistamo::TESTING_ENVIRONMENT,
+      'test' => Tunnistamo::TESTING_ENVIRONMENT,
+      'stage' => Tunnistamo::STAGING_ENVIRONMENT,
+      'prod' => Tunnistamo::PRODUCTION_ENVIRONMENT,
+    ];
+    foreach ($envs as $env => $url) {
+      $this->setActiveEnvironmentName($env);
+      $this->assertEndpoint($url);
+    }
   }
 
 }

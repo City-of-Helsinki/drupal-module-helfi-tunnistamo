@@ -11,10 +11,28 @@ declare(strict_types = 1);
  * Implements hook_install().
  */
 function helfi_tunnistamo_install() : void {
-  // Enable tunnistamo login button by default.
   \Drupal::configFactory()
     ->getEditable('openid_connect.settings')
     ->set('override_registration_settings', TRUE)
+    // Enable tunnistamo login button by default.
     ->set('user_login_display', 'below')
+    // Logout from openid connect provider by default.
+    ->set('end_session_enabled', TRUE)
     ->save();
+}
+
+/**
+ * Enable logout support.
+ */
+function helfi_tunnistamo_update_9001() : void {
+  Drupal::configFactory()
+    ->getEditable('openid_connect.settings')
+    ->set('end_session_enabled', TRUE)
+    ->save();
+
+  if (!Drupal::moduleHandler()->moduleExists('helfi_api_base')) {
+    Drupal::service('module_installer')->install([
+      'helfi_api_base',
+    ]);
+  }
 }
