@@ -25,9 +25,9 @@ final class RedirectUrlEvent extends Event {
    *   The Tunnistamo client.
    */
   public function __construct(
-    public Url $redirectUrl,
-    public Request $request,
-    public Tunnistamo $client
+    private Url $redirectUrl,
+    private Request $request,
+    private Tunnistamo $client
   ) {
   }
 
