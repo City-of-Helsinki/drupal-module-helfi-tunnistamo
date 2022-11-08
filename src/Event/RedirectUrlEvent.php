@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace Drupal\helfi_tunnistamo\Event;
 
 use Drupal\Core\Url;
+use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\Event;
 
@@ -14,30 +15,30 @@ use Symfony\Contracts\EventDispatcher\Event;
 final class RedirectUrlEvent extends Event {
 
   /**
-   * The redirect url.
-   *
-   * @var \Drupal\Core\Url
-   */
-  private Url $redirectUrl;
-
-  /**
-   * The request.
-   *
-   * @var \Symfony\Component\HttpFoundation\Request
-   */
-  private Request $request;
-
-  /**
    * Gets the redirect url.
    *
    * @param \Drupal\Core\Url $redirectUrl
    *   The redirect url.
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request.
+   * @param \Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo $client
+   *   The Tunnistamo client.
    */
-  public function __construct(Url $redirectUrl, Request $request) {
-    $this->redirectUrl = $redirectUrl;
-    $this->request = $request;
+  public function __construct(
+    private Url $redirectUrl,
+    private Request $request,
+    private Tunnistamo $client
+  ) {
+  }
+
+  /**
+   * Gets the Tunnistamo client.
+   *
+   * @return \Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo
+   *   The Tunnistamo client.
+   */
+  public function getClient() : Tunnistamo {
+    return $this->client;
   }
 
   /**

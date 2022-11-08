@@ -108,7 +108,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     /** @var \Drupal\helfi_tunnistamo\Event\RedirectUrlEvent $urlEvent */
     $urlEvent = $this->eventDispatcher->dispatch(new RedirectUrlEvent(
       $url,
-      $this->requestStack->getCurrentRequest()
+      $this->requestStack->getCurrentRequest(),
+      $this
     ));
     return $urlEvent->getRedirectUrl();
   }
