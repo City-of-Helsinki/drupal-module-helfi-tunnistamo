@@ -34,6 +34,6 @@ function helfi_tunnistamo_openid_connect_userinfo(array &$userinfo, array $conte
   }
 
   if (in_array('ad_groups', $plugin->getClientScopes()) && empty($userinfo['email'])) {
-    $userinfo['email'] = $userinfo['name'] . '@edu.hel.fi';
+    $userinfo['email'] = $userinfo['sub'] . '@localhost';
   }
 }
