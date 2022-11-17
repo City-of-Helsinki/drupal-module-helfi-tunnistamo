@@ -33,6 +33,8 @@ function helfi_tunnistamo_openid_connect_userinfo(array &$userinfo, array $conte
     return;
   }
 
+  // If client has 'ad_groups' scope and user email is missing, replace it with
+  // just some made-up address (issue with @edu.hel.fi users).
   if (in_array('ad_groups', $plugin->getClientScopes()) && empty($userinfo['email'])) {
     $userinfo['email'] = $userinfo['sub'] . '@localhost';
   }
