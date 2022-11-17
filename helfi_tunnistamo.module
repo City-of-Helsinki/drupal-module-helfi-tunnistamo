@@ -22,3 +22,18 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
   }
   $plugin->mapRoles($account);
 }
+
+/**
+ * {@inheritdoc}
+ */
+function helfi_tunnistamo_openid_connect_userinfo(array &$userinfo, array $context) {
+  $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
+
+  if (!$plugin instanceof Tunnistamo) {
+    return;
+  }
+
+  if (in_array('ad_groups', $plugin->getClientScopes()) && empty($userinfo['email'])) {
+    $userinfo['email'] = $userinfo['name'] . '@edu.hel.fi';
+  }
+}
