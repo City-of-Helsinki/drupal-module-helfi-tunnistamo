@@ -233,7 +233,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
 
     $form['environment_url'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('OpenID Connect Authorization server / Issuer.'),
+      '#title' => $this->t('OpenID Connect Authorization server / Issuer'),
       '#description' => [
         [
           '#markup' => $this->t('Url to auth server. Leave this empty to detect environment automatically. See README.md for more information.'),
@@ -268,7 +268,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#type' => 'checkboxes',
       '#multiple' => TRUE,
       '#options' => $roleOptions,
-      '#title' => $this->t('Client roles.'),
+      '#title' => $this->t('Client roles'),
       '#description' => $this->t('Select roles to be assigned users logging in with this client.'),
       '#default_value' => $this->getClientRoles(),
     ];
