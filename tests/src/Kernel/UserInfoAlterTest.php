@@ -97,8 +97,8 @@ class UserInfoAlterTest extends KernelTestBase {
    */
   public function authorizationData() : array {
     return [
-      // Make sure authorization fails when no email or 'ad_groups'
-      // scope is set.
+      // Make sure authorization fails when user has no email address or
+      // client doesn't define 'ad_groups' scope.
       [
         [
           'email' => '',
@@ -107,9 +107,9 @@ class UserInfoAlterTest extends KernelTestBase {
         'email',
         FALSE,
       ],
-      // Make sure authorization succeeds and a random email is
-      // generated when user has no email, but 'ad_groups' scope
-      // is set.
+      // Make sure authorization succeeds and a random email address is
+      // generated when user has no email, but client has 'ad_groups'
+      // scope set.
       [
         [
           'email' => '',
