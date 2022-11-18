@@ -48,9 +48,11 @@ class UserInfoAlterTest extends KernelTestBase {
     $client = $this->prophesize(OpenIDConnectClientEntityInterface::class);
     $client->id()->willReturn('tunnistamo');
     $client->getPlugin()->willReturn($plugin->reveal());
-    // Our hook_openid_connect_userinfo_alter() loads the actual Tunnistamo
-    // client, and we have to override the client scopes from actual client
-    // entity.
+    // OpenIdConnect::buildContext() passes 'plugin_id' string to
+    // hook_openid_connect_userinfo_alter() hook instead of actual plugin
+    // object, meaning our alter hook has to load the actual client entity,
+    // and we cannot mock the client scopes here.
+    // Modify the client scopes on default Tunnistamo client entity.
     $this->setPluginConfiguration('client_scopes', $scopes);
 
     return $client->reveal();
@@ -95,6 +97,8 @@ class UserInfoAlterTest extends KernelTestBase {
    */
   public function authorizationData() : array {
     return [
+      // Make sure authorization fails when no email or 'ad_groups'
+      // scope is set.
       [
         [
           'email' => '',
@@ -103,6 +107,9 @@ class UserInfoAlterTest extends KernelTestBase {
         'email',
         FALSE,
       ],
+      // Make sure authorization succeeds and a random email is
+      // generated when user has no email, but 'ad_groups' scope
+      // is set.
       [
         [
           'email' => '',
