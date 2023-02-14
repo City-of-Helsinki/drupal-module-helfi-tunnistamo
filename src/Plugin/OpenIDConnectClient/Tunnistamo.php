@@ -178,7 +178,9 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     $endpointMap = [
       'dev' => self::TESTING_ENVIRONMENT,
       'test' => self::TESTING_ENVIRONMENT,
+      'testing' => self::TESTING_ENVIRONMENT,
       'stage' => self::STAGING_ENVIRONMENT,
+      'staging' => self::STAGING_ENVIRONMENT,
       'prod' => self::PRODUCTION_ENVIRONMENT,
     ];
     $base = self::STAGING_ENVIRONMENT;
