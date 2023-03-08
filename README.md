@@ -36,4 +36,4 @@ $config['openid_connect.client.tunnistamo']['settings']['environment_url'] = get
 
 Slack: #helfi-drupal (http://helsinkicity.slack.com/)
 
-Mail: helfi-drupal-aaaactuootjhcono73gc34rj2u@druid.slack.com
+Mail: drupal@hel.fi
