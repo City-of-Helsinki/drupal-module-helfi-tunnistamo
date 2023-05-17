@@ -25,6 +25,10 @@ $config['openid_connect.client.tunnistamo']['settings']['client_secret'] = geten
 $config['openid_connect.client.tunnistamo']['settings']['environment_url'] = getenv('TUNNISTAMO_ENVIRONMENT_URL');
 ```
 
+## Local development
+
+TBD: How to set up tunnistamo-authentication on local development environment.
+
 ## Contact
 
 Slack: #helfi-drupal (http://helsinkicity.slack.com/)
