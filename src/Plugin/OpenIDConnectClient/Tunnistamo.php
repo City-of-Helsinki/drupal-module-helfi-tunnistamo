@@ -337,10 +337,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   /**
    * Set user preferred admin langcode if not set.
    *
-   * @param UserInterface $account
-   *    Account.
-   *
-   * @return void
+   * @param \Drupal\user\UserInterface $account
+   *   Account.
    */
   public function setUserPreferredAdminLanguage(UserInterface $account) : void {
     try {
@@ -351,7 +349,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
         $account->save();
       }
     }
-    catch(\Exception $e){
+    catch (\Exception $e){
       return;
     }
   }
