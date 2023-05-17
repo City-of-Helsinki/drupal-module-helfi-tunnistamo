@@ -349,7 +349,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
         $account->save();
       }
     }
-    catch (\Exception $e){
+    catch (\Exception $e) {
       return;
     }
   }
