@@ -28,6 +28,7 @@ $config['openid_connect.client.tunnistamo']['settings']['environment_url'] = get
 ## Local development
 
 TBD: How to set up tunnistamo-authentication on local development environment.
+https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli
 
 ## Contact
 
