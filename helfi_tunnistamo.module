@@ -21,6 +21,7 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
     return;
   }
   $plugin->mapRoles($account);
+  $plugin->setUserPreferredAdminLanguage($account);
 }
 
 /**

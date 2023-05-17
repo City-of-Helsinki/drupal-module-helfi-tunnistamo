@@ -334,4 +334,25 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     return explode(',', $this->configuration['client_scopes']);
   }
 
+  /**
+   * Set user preferred admin langcode if not set.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   Account.
+   */
+  public function setUserPreferredAdminLanguage(UserInterface $account) : void {
+    try {
+      if (
+        $this->environmentResolver->getActiveProject() &&
+        !$account->getPreferredAdminLangcode(FALSE)
+      ) {
+        $account->set('preferred_admin_langcode', 'fi');
+        $account->save();
+      }
+    }
+    catch (\Exception $e) {
+      return;
+    }
+  }
+
 }
