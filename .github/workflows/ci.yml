@@ -51,6 +51,7 @@ jobs:
         run: |
           composer config repositories.5 path $GITHUB_WORKSPACE
           composer require drupal/$MODULE_NAME -W
+          cp -r $GITHUB_WORKSPACE/.git $MODULE_FOLDER/
 
       - name: Install Drupal
         working-directory: ${{ env.DRUPAL_ROOT }}
@@ -74,10 +75,10 @@ jobs:
         run: |
           vendor/bin/phpunit \
             --bootstrap $DRUPAL_ROOT/public/core/tests/bootstrap.php \
-            -c $GITHUB_WORKSPACE/phpunit.xml \
-            --coverage-clover=coverage.xml \
-            $GITHUB_WORKSPACE
-          codecov
+            -c $MODULE_FOLDER/phpunit.xml \
+            --coverage-clover=$MODULE_FOLDER/coverage.xml \
+            $MODULE_FOLDER
+          codecov --rootDir $MODULE_FOLDER
 
       - name: Create an artifact from test report
         uses: actions/upload-artifact@v3
