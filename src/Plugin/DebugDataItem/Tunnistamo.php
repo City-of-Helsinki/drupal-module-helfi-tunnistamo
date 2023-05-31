@@ -8,7 +8,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\helfi_api_base\DebugDataItemPluginBase;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo as TunnistamoClient;
-use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
