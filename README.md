@@ -1,6 +1,6 @@
 # Drupal Tunnistamo integration
 
-![CI](https://github.com/City-of-Helsinki/drupal-module-helfi-tunnistamo/workflows/CI/badge.svg)
+![CI](https://github.com/City-of-Helsinki/drupal-module-helfi-tunnistamo/workflows/CI/badge.svg) [![codecov](https://codecov.io/gh/City-of-Helsinki/drupal-module-helfi-tunnistamo/branch/main/graph/badge.svg?token=LG5QO84DC5)](https://codecov.io/gh/City-of-Helsinki/drupal-module-helfi-tunnistamo)
 
 ## Usage
 
