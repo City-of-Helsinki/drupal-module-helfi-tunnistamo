@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\GeneratedUrl;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
@@ -28,30 +27,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class Tunnistamo extends OpenIDConnectClientBase {
 
-  public const TESTING_ENVIRONMENT = 'https://tunnistamo.test.hel.ninja';
-  public const STAGING_ENVIRONMENT = 'https://api.hel.fi/sso-test';
-  public const PRODUCTION_ENVIRONMENT = 'https://api.hel.fi/sso';
-
-  /**
-   * Whether to send silent authentication or not.
-   *
-   * @var bool
-   */
-  private bool $silentAuthentication = FALSE;
-
   /**
    * The event dispatcher.
    *
    * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
    */
   private EventDispatcherInterface $eventDispatcher;
-
-  /**
-   * The environment resolver.
-   *
-   * @var \Drupal\helfi_api_base\Environment\EnvironmentResolverInterface
-   */
-  private EnvironmentResolverInterface $environmentResolver;
 
   /**
    * {@inheritdoc}
@@ -64,7 +45,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   ) : self {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
-    $instance->environmentResolver = $container->get('helfi_api_base.environment_resolver');
     return $instance;
   }
 
@@ -115,35 +95,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
-   * Attempt to authenticate silently without prompt.
-   *
-   * @return $this
-   *   The self.
-   */
-  public function setSilentAuthentication(): self {
-    $this->silentAuthentication = TRUE;
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getUrlOptions(
-    string $scope,
-    GeneratedUrl $redirect_uri
-  ): array {
-    $options = parent::getUrlOptions($scope, $redirect_uri);
-
-    if ($this->silentAuthentication) {
-      $options['query'] += [
-        'prompt' => 'none',
-      ];
-    }
-
-    return $options;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function authorize(string $scope = 'openid email', array $additional_params = []): Response {
@@ -175,29 +126,10 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function getEndpoints(): array {
-    $endpointMap = [
-      'dev' => self::TESTING_ENVIRONMENT,
-      'test' => self::TESTING_ENVIRONMENT,
-      'stage' => self::STAGING_ENVIRONMENT,
-      'prod' => self::PRODUCTION_ENVIRONMENT,
-    ];
-    $base = self::STAGING_ENVIRONMENT;
-
-    try {
-      // Attempt to automatically detect endpoint.
-      $env = $this->environmentResolver->getActiveEnvironmentName();
-
-      if (isset($endpointMap[$env])) {
-        $base = $endpointMap[$env];
-      }
+    if (empty($this->configuration['environment_url'])) {
+      throw new \InvalidArgumentException('Missing required "environment_url" configuration.');
     }
-    catch (\InvalidArgumentException) {
-    }
-    // Allow environment_url config to always override automatically detected
-    // endpoint.
-    if (!empty($this->configuration['environment_url'])) {
-      $base = $this->configuration['environment_url'];
-    }
+    $base = $this->configuration['environment_url'];
 
     return [
       'authorization' => sprintf('%s/openid/authorize/', $base),
@@ -236,16 +168,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#title' => $this->t('OpenID Connect Authorization server / Issuer'),
       '#description' => [
         [
-          '#markup' => $this->t('Url to auth server. Leave this empty to detect environment automatically. See README.md for more information.'),
-        ],
-        [
-          '#theme' => 'item_list',
-          '#items' => [
-            sprintf('DEV: %s', self::TESTING_ENVIRONMENT),
-            sprintf('TEST: %s', self::TESTING_ENVIRONMENT),
-            sprintf('STAGE: %s', self::STAGING_ENVIRONMENT),
-            sprintf('PROD: %s', self::PRODUCTION_ENVIRONMENT),
-          ],
+          '#markup' => $this->t('Url to auth server. See README.md for more information.'),
         ],
       ],
       '#default_value' => $this->configuration['environment_url'],
@@ -350,8 +273,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
         $account->save();
       }
     }
-    catch (\Exception $e) {
-      return;
+    catch (\Exception) {
     }
   }
 
