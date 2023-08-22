@@ -14,7 +14,7 @@ use Drupal\user\UserInterface;
 /**
  * {@inheritdoc}
  */
-function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) {
+function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) : void {
   $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
 
   if (!$plugin instanceof Tunnistamo) {

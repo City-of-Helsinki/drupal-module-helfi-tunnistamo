@@ -8,11 +8,11 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
-use Drupal\helfi_api_base\Environment\EnvironmentResolverInterface;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\UserInterface;
+use GuzzleHttp\Utils;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -129,14 +129,31 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     if (empty($this->configuration['environment_url'])) {
       throw new \InvalidArgumentException('Missing required "environment_url" configuration.');
     }
-    $base = $this->configuration['environment_url'];
+    $base = rtrim($this->configuration['environment_url'], '/');
 
-    return [
-      'authorization' => sprintf('%s/openid/authorize/', $base),
-      'token' => sprintf('%s/openid/token/', $base),
-      'userinfo' => sprintf('%s/openid/userinfo/', $base),
-      'end_session' => sprintf('%s/openid/end-session', $base),
+    $response = $this->httpClient->request(
+      'GET',
+      sprintf('%s/.well-known/openid-configuration', $base)
+    );
+    $configuration = Utils::jsonDecode($response->getBody()->getContents(), TRUE);
+
+    $endpoints = [
+      'authorization' => '',
+      'token' => '',
+      'userinfo' => '',
+      'end_session' => '',
     ];
+
+    foreach ($endpoints as $type => $value) {
+      $key = sprintf('%s_endpoint', $type);
+
+      if (!isset($configuration[$key])) {
+        throw new \InvalidArgumentException(sprintf('Missing required "%s" endpoint configuration.', $type));
+      }
+      $endpoints[$type] = $configuration[$type . '_endpoint'];
+    }
+
+    return $endpoints;
   }
 
   /**
@@ -265,10 +282,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function setUserPreferredAdminLanguage(UserInterface $account) : void {
     try {
-      if (
-        $this->environmentResolver->getActiveProject() &&
-        !$account->getPreferredAdminLangcode(FALSE)
-      ) {
+      if (!$account->getPreferredAdminLangcode(FALSE)) {
         $account->set('preferred_admin_langcode', 'fi');
         $account->save();
       }
