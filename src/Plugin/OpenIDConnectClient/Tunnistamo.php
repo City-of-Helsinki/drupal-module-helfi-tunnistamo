@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
+use Drupal\helfi_tunnistamo\AccountTrait;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
@@ -25,6 +26,8 @@ use Symfony\Component\HttpFoundation\Response;
  * )
  */
 final class Tunnistamo extends OpenIDConnectClientBase {
+
+  use AccountTrait;
 
   /**
    * The event dispatcher.
@@ -276,51 +279,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     if ($this->getAdRoles() && $this->getClientRoles()) {
       @trigger_error('Client and AD roles cannot be mapped at the same time. You must choose between the two.');
     }
-  }
-
-  /**
-   * Removes all roles from given user.
-   *
-   * @param \Drupal\user\UserInterface $account
-   *   The account.
-   *
-   * @return self
-   *   The self.
-   */
-  private function removeRoles(UserInterface $account) : self {
-    array_map(
-      fn (string $rid) => $account->removeRole($rid),
-      $account->getRoles(FALSE)
-    );
-    return $this;
-  }
-
-  /**
-   * Grant given roles to user.
-   *
-   * @param \Drupal\user\UserInterface $account
-   *   The account.
-   * @param string[] $roles
-   *   The roles to map.
-   *
-   * @return $this
-   *   The self.
-   */
-  protected function mapRoles(UserInterface $account, array $roles) : self {
-    foreach ($roles as $rid) {
-      // Trying to add authenticated or anonymous role will throw an
-      // exception.
-      if (in_array($rid, [
-        AccountInterface::AUTHENTICATED_ROLE,
-        AccountInterface::ANONYMOUS_ROLE,
-      ])) {
-        continue;
-      }
-      $account->addRole($rid);
-    }
-    $account->save();
-
-    return $this;
   }
 
   /**
