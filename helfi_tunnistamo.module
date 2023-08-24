@@ -30,9 +30,19 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
  * Implements hook_form_FORM_ID_alter().
  */
 function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_state, $form_id) : void {
-  // Prevent users from changing the email.
+  $mail = $form['account']['mail']['#default_value'] ?? NULL;
+
+  if (!$account = user_load_by_mail($mail)) {
+    return;
+  }
+
+  if (!\Drupal::service('externalauth.authmap')->getAll($account->id())) {
+    return;
+  }
+  // Prevent users from changing the email if they have used openid_connect
+  // to log in.
   $form['account']['mail']['#type'] = 'item';
-  $form['account']['mail']['#markup'] = $form['account']['mail']['#default_value'] ?? '';
+  $form['account']['mail']['#markup'] = $account->getEmail();
 }
 
 /**
