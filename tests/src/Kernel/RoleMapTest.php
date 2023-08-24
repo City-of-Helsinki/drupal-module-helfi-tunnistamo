@@ -43,4 +43,21 @@ class RoleMapTest extends KernelTestBase {
     ], $account->getRoles());
   }
 
+  /**
+   * Tests that AD roles are mapped accordingly.
+   */
+  public function testAdRoleMap() : void {
+    $account = $this->createUser();
+    // Create a new role and tell our plugin to map the role.
+    $role = $this->createRole([], 'test');
+    $this->setPluginConfiguration('ad_roles', ['ad_role' => $role]);
+
+    $this->getPlugin()->mapAdRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
+    // Our account should have the newly added role now.
+    $this->assertEquals([
+      AccountInterface::AUTHENTICATED_ROLE,
+      $role,
+    ], $account->getRoles());
+  }
+
 }

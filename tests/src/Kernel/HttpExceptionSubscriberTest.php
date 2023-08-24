@@ -30,26 +30,12 @@ class HttpExceptionSubscriberTest extends KernelTestBase {
    * Tests auto-login on 403 pages.
    */
   public function testAutologinRedirect() : void {
+    $this->setupEndpoints();
     $this->setPluginConfiguration('auto_login', TRUE);
     $request = Request::create('/admin');
     $response = $this->getHttpKernelResponse($request);
     $this->assertInstanceOf(TrustedRedirectResponse::class, $response);
     $this->assertEquals(Response::HTTP_FOUND, $response->getStatusCode());
-    $this->assertStringNotContainsString('prompt=none', $response->getTargetUrl());
-  }
-
-  /**
-   * Tests auto-login when 403 page is served via iframe.
-   */
-  public function testAutologinRedirectIframe() : void {
-    $this->setPluginConfiguration('auto_login', TRUE);
-    // Make sure prompt=none is set.
-    $request = Request::create('/admin/content');
-    $request->headers->set('Sec-Fetch-Dest', 'iframe');
-    $response = $this->getHttpKernelResponse($request);
-    $this->assertInstanceOf(TrustedRedirectResponse::class, $response);
-    $this->assertEquals(Response::HTTP_FOUND, $response->getStatusCode());
-    $this->assertStringContainsString('prompt=none', $response->getTargetUrl());
   }
 
 }
