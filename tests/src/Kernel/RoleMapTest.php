@@ -21,12 +21,12 @@ class RoleMapTest extends KernelTestBase {
    */
   public function testRoleMap() : void {
     $account = $this->createUser();
-    // Create new role and tell our plugin to map the role.
+    // Create a new role and tell our plugin to map the role.
     $role = $this->createRole([], 'test');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
 
-    $this->getPlugin()->mapRoles($account);
-    // Our account should have newly added role now.
+    $this->getPlugin()->mapClientRoles($account);
+    // Our account should have the newly added role now.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
       $role,
@@ -36,7 +36,7 @@ class RoleMapTest extends KernelTestBase {
       AccountInterface::AUTHENTICATED_ROLE => AccountInterface::AUTHENTICATED_ROLE,
     ]);
 
-    $this->getPlugin()->mapRoles($account);
+    $this->getPlugin()->mapClientRoles($account);
     // Make sure our custom role is removed.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,

@@ -7,8 +7,6 @@
 
 declare(strict_types = 1);
 
-use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
-
 /**
  * Implements hook_install().
  */
@@ -37,16 +35,4 @@ function helfi_tunnistamo_update_9001() : void {
       'helfi_api_base',
     ]);
   }
-}
-
-function helfi_tunnistamo_update_9002() : void {
-  if (OpenIDConnectClientEntity::load('azure-ad')) {
-    return;
-  }
-  $client = OpenIDConnectClientEntity::create([
-    'id' => 'azure-ad',
-    'label' => 'Tunnistamo (Azure AD)',
-    'plugin' => 'tunnistamo',
-  ]);
-  $client->save();
 }

@@ -12,7 +12,7 @@ use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Drupal\user\UserInterface;
 
 /**
- * {@inheritdoc}
+ * Implements hook_openid_connect_post_authorize().
  */
 function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) : void {
   $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
@@ -20,7 +20,8 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
   if (!$plugin instanceof Tunnistamo) {
     return;
   }
-  $plugin->mapRoles($account);
+  $plugin->mapClientRoles($account);
+  $plugin->mapAdRoles($account, $context);
   $plugin->setUserPreferredAdminLanguage($account);
 }
 

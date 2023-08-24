@@ -12,7 +12,6 @@ use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\UserInterface;
-use GuzzleHttp\Utils;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -126,33 +125,33 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function getEndpoints(): array {
-    if (empty($this->configuration['environment_url'])) {
-      throw new \InvalidArgumentException('Missing required "environment_url" configuration.');
-    }
-    $base = rtrim($this->configuration['environment_url'], '/');
+    static $endpoints = [];
 
-    $response = $this->httpClient->request(
-      'GET',
-      sprintf('%s/.well-known/openid-configuration', $base)
-    );
-    $configuration = Utils::jsonDecode($response->getBody()->getContents(), TRUE);
-
-    $endpoints = [
-      'authorization' => '',
-      'token' => '',
-      'userinfo' => '',
-      'end_session' => '',
-    ];
-
-    foreach ($endpoints as $type => $value) {
-      $key = sprintf('%s_endpoint', $type);
-
-      if (!isset($configuration[$key])) {
-        throw new \InvalidArgumentException(sprintf('Missing required "%s" endpoint configuration.', $type));
+    if (!$endpoints) {
+      if (empty($this->configuration['environment_url'])) {
+        throw new \InvalidArgumentException('Missing required "environment_url" configuration.');
       }
-      $endpoints[$type] = $configuration[$type . '_endpoint'];
-    }
+      $configuration = $this
+        ->autoDiscover
+        ->fetch(rtrim($this->configuration['environment_url'], '/') . '/');
 
+      $endpoints = [
+        'authorization' => '',
+        'token' => '',
+        'userinfo' => '',
+        'end_session' => '',
+      ];
+
+      foreach ($endpoints as $type => $value) {
+        $key = sprintf('%s_endpoint', $type);
+
+        if (!isset($configuration[$key])) {
+          throw new \InvalidArgumentException(sprintf('Missing required "%s" endpoint configuration.', $type));
+        }
+        $endpoints[$type] = $configuration[$type . '_endpoint'];
+      }
+
+    }
     return $endpoints;
   }
 
@@ -204,6 +203,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       $roleOptions[$role->id()] = $role->label();
     }
 
+    $form['ad_roles'] = [
+      '#type' => 'markup',
+      '#markup' => $this->t('Map AD role to Drupal role. This must be done code. See README.md for more information'),
+    ];
+
     $form['client_roles'] = [
       '#type' => 'checkboxes',
       '#multiple' => TRUE,
@@ -217,39 +221,124 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
+   * Gets AD roles mapping.
+   *
+   * @return array
+   *   The AD to Drupal role map.
+   */
+  public function getAdRoles() : array {
+    return array_filter($this->configuration['ad_roles'] ?? []);
+  }
+
+  /**
    * Remove existing and map new roles based on plugin configuration.
    *
    * @param \Drupal\user\UserInterface $account
-   *   The account to map roles to.
-   *
-   * @throws \Drupal\Core\Entity\EntityStorageException
+   *   The account.
+   * @param array $context
+   *   The context provided by 'openid_connect' module.
    */
-  public function mapRoles(UserInterface $account) : void {
+  public function mapAdRoles(UserInterface $account, array $context) : void {
+    $this->assertFeatureCompatibility();
+
     // Skip role mapping if no roles are set, so we don't remove
     // any manually set roles when this feature is not enabled.
-    if (!$roles = $this->getClientRoles()) {
+    if ((!$adRoles = $this->getAdRoles()) || empty($context['userinfo']['ad_groups'])) {
       return;
     }
+    $roles = [];
 
-    // Remove all existing roles.
+    foreach ($adRoles as $adRole => $drupalRoles) {
+      if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
+        continue;
+      }
+
+      if (!is_array($drupalRoles)) {
+        $drupalRoles = [$drupalRoles];
+      }
+
+      foreach ($drupalRoles as $drupalRole) {
+        $roles[] = $drupalRole;
+      }
+    }
+
+    if (!$roles) {
+      return;
+    }
+    $this->removeRoles($account)
+      ->mapRoles($account, $roles);
+  }
+
+  /**
+   * Asserts that incompatible features are not enabled at the same time.
+   */
+  private function assertFeatureCompatibility() : void {
+    if ($this->getAdRoles() && $this->getClientRoles()) {
+      @trigger_error('Client and AD roles cannot be mapped at the same time. You must choose between the two.');
+    }
+  }
+
+  /**
+   * Removes all roles from given user.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The account.
+   *
+   * @return self
+   *   The self.
+   */
+  private function removeRoles(UserInterface $account) : self {
     array_map(
       fn (string $rid) => $account->removeRole($rid),
       $account->getRoles(FALSE)
     );
+    return $this;
+  }
 
-    // Add new roles from plugin config.
-    array_map(function (string $rid) use ($account) {
+  /**
+   * Grant given roles to user.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The account.
+   * @param string[] $roles
+   *   The roles to map.
+   *
+   * @return $this
+   *   The self.
+   */
+  protected function mapRoles(UserInterface $account, array $roles) : self {
+    foreach ($roles as $rid) {
       // Trying to add authenticated or anonymous role will throw an
       // exception.
       if (in_array($rid, [
         AccountInterface::AUTHENTICATED_ROLE,
         AccountInterface::ANONYMOUS_ROLE,
       ])) {
-        return;
+        continue;
       }
       $account->addRole($rid);
-    }, $roles);
+    }
     $account->save();
+
+    return $this;
+  }
+
+  /**
+   * Remove existing and map new roles based on plugin configuration.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The account to map roles to.
+   */
+  public function mapClientRoles(UserInterface $account) : void {
+    $this->assertFeatureCompatibility();
+
+    // Skip role mapping if no roles are set, so we don't remove
+    // any manually set roles when this feature is not enabled.
+    if (!$roles = $this->getClientRoles()) {
+      return;
+    }
+    $this->removeRoles($account)
+      ->mapRoles($account, $roles);
   }
 
   /**
