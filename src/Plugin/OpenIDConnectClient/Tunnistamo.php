@@ -8,7 +8,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
-use Drupal\helfi_tunnistamo\AccountTrait;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
@@ -26,8 +25,6 @@ use Symfony\Component\HttpFoundation\Response;
  * )
  */
 final class Tunnistamo extends OpenIDConnectClientBase {
-
-  use AccountTrait;
 
   /**
    * The event dispatcher.
@@ -234,52 +231,55 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
-   * Remove existing and map new roles based on plugin configuration.
+   * Grant given roles to user.
    *
    * @param \Drupal\user\UserInterface $account
    *   The account.
    * @param array $context
-   *   The context provided by 'openid_connect' module.
+   *   The context.
    */
-  public function mapAdRoles(UserInterface $account, array $context) : void {
-    if ((!$adRoles = $this->getAdRoles()) || empty($context['userinfo']['ad_groups'])) {
+  public function mapRoles(UserInterface $account, array $context) : void {
+    $roles = $this->getClientRoles();
+    $adRoles = $this->getAdRoles();
+
+    if (!$roles && !$adRoles) {
       return;
     }
-    $roles = [];
 
-    foreach ($adRoles as $adRole => $drupalRoles) {
-      if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
+    array_map(
+      fn (string $rid) => $account->removeRole($rid),
+      $account->getRoles(FALSE)
+    );
+
+    if ($adRoles && !empty($context['userinfo']['ad_groups'])) {
+      foreach ($adRoles as $adRole => $drupalRoles) {
+        if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
+          continue;
+        }
+
+        if (!is_array($drupalRoles)) {
+          $drupalRoles = [$drupalRoles];
+        }
+
+        foreach ($drupalRoles as $drupalRole) {
+          $roles[] = $drupalRole;
+        }
+      }
+    }
+
+    foreach ($roles as $rid) {
+      // Trying to add the authenticated/anonymous role will throw an
+      // exception.
+      if (in_array($rid, [
+        AccountInterface::AUTHENTICATED_ROLE,
+        AccountInterface::ANONYMOUS_ROLE,
+      ])) {
         continue;
       }
-
-      if (!is_array($drupalRoles)) {
-        $drupalRoles = [$drupalRoles];
-      }
-
-      foreach ($drupalRoles as $drupalRole) {
-        $roles[] = $drupalRole;
-      }
+      $account->addRole($rid);
     }
 
-    if (!$roles) {
-      return;
-    }
-    $this->removeRoles($account)
-      ->mapRoles($account, $roles);
-  }
-
-  /**
-   * Remove existing and map new roles based on plugin configuration.
-   *
-   * @param \Drupal\user\UserInterface $account
-   *   The account to map roles to.
-   */
-  public function mapClientRoles(UserInterface $account) : void {
-    if (!$roles = $this->getClientRoles()) {
-      return;
-    }
-    $this->removeRoles($account)
-      ->mapRoles($account, $roles);
+    $account->save();
   }
 
   /**

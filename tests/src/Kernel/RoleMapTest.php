@@ -25,7 +25,7 @@ class RoleMapTest extends KernelTestBase {
     $role = $this->createRole([], 'test');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
 
-    $this->getPlugin()->mapClientRoles($account);
+    $this->getPlugin()->mapRoles($account, []);
     // Our account should have the newly added role now.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
@@ -36,27 +36,21 @@ class RoleMapTest extends KernelTestBase {
       AccountInterface::AUTHENTICATED_ROLE => AccountInterface::AUTHENTICATED_ROLE,
     ]);
 
-    $this->getPlugin()->mapClientRoles($account);
+    $this->getPlugin()->mapRoles($account, []);
     // Make sure our custom role is removed.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
     ], $account->getRoles());
-  }
 
-  /**
-   * Tests that AD roles are mapped accordingly.
-   */
-  public function testAdRoleMap() : void {
-    $account = $this->createUser();
-    // Create a new role and tell our plugin to map the role.
-    $role = $this->createRole([], 'test');
-    $this->setPluginConfiguration('ad_roles', ['ad_role' => $role]);
-
-    $this->getPlugin()->mapAdRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
-    // Our account should have the newly added role now.
+    $role2 = $this->createRole([], 'test2');
+    $this->setPluginConfiguration('client_roles', [$role => $role]);
+    $this->setPluginConfiguration('ad_roles', ['ad_role' => $role2]);
+    $this->getPlugin()->mapRoles($account, []);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
       $role,
+      $role2,
     ], $account->getRoles());
   }
 

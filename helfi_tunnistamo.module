@@ -21,8 +21,7 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
   if (!$plugin instanceof Tunnistamo) {
     return;
   }
-  $plugin->mapClientRoles($account);
-  $plugin->mapAdRoles($account, $context);
+  $plugin->mapRoles($account, $context);
   $plugin->setUserPreferredAdminLanguage($account);
 }
 
