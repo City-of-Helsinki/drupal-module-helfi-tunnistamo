@@ -22,10 +22,16 @@ trait AccountTrait {
    *   The self.
    */
   protected function removeRoles(UserInterface $account) : static {
-    array_map(
-      fn (string $rid) => $account->removeRole($rid),
-      $account->getRoles(FALSE)
-    );
+    static $called = NULL;
+
+    // Make sure roles are only removed once.
+    if ($called === NULL) {
+      array_map(
+        fn (string $rid) => $account->removeRole($rid),
+        $account->getRoles(FALSE)
+      );
+      $called = TRUE;
+    }
     return $this;
   }
 

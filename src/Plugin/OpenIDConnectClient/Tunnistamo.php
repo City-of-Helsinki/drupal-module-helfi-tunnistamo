@@ -242,10 +242,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *   The context provided by 'openid_connect' module.
    */
   public function mapAdRoles(UserInterface $account, array $context) : void {
-    $this->assertFeatureCompatibility();
-
-    // Skip role mapping if no roles are set, so we don't remove
-    // any manually set roles when this feature is not enabled.
     if ((!$adRoles = $this->getAdRoles()) || empty($context['userinfo']['ad_groups'])) {
       return;
     }
@@ -273,25 +269,12 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
-   * Asserts that incompatible features are not enabled at the same time.
-   */
-  private function assertFeatureCompatibility() : void {
-    if ($this->getAdRoles() && $this->getClientRoles()) {
-      @trigger_error('Client and AD roles cannot be mapped at the same time. You must choose between the two.');
-    }
-  }
-
-  /**
    * Remove existing and map new roles based on plugin configuration.
    *
    * @param \Drupal\user\UserInterface $account
    *   The account to map roles to.
    */
   public function mapClientRoles(UserInterface $account) : void {
-    $this->assertFeatureCompatibility();
-
-    // Skip role mapping if no roles are set, so we don't remove
-    // any manually set roles when this feature is not enabled.
     if (!$roles = $this->getClientRoles()) {
       return;
     }
