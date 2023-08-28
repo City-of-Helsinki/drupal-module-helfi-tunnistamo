@@ -17,12 +17,14 @@ enable `tunnistamo` client from `/admin/config/services/openid-connect`.
 
 See https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli
 
-## Map AD group/role to a Drupal role automatically
+## Map AD group to a Drupal role automatically
 
 ```php
-$config['openid_connect.client.client_id']['ad_roles'] = [
-  'ad_role' => ['drupal_role', 'drupal_role2'],
-  'ad_role2' => 'drupal_role',
+$config['openid_connect.client.azure-ad']['settings']['ad_roles'] = [
+  [
+    'ad_role' => '[role from AD]',
+    'roles' => ['super_administrator'],
+  ],
 ];
 ```
 
