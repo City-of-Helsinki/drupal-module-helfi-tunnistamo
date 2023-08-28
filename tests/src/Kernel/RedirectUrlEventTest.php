@@ -61,6 +61,7 @@ class RedirectUrlEventTest extends KernelTestBase implements EventSubscriberInte
    * Make sure authorization redirect_uri can be altered.
    */
   public function testAlterAuthorizeUrl() : void {
+    $this->setupEndpoints();
     self::assertCount(0, $this->caughtEvents);
     $client = $this->getPlugin();
     $response = $client->authorize();

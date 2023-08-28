@@ -4,9 +4,6 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
-use Drupal\helfi_api_base\Environment\EnvironmentResolver;
-use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
-
 /**
  * Tests Tunnistamo configuration.
  *
@@ -34,65 +31,35 @@ class TunnistamoClientTest extends KernelTestBase {
   }
 
   /**
-   * Asserts that endpoint base url matches the given url.
-   *
-   * @param string $expected
-   *   The expected endpoint url.
+   * Make sure empty environment url throws an exception.
    */
-  private function assertEndpoint(string $expected) : void {
-    array_map(function (string $url) use ($expected) {
-      $this->assertTrue(str_starts_with($url, $expected));
-    }, $this->getPlugin()->getEndpoints());
+  public function testEmptyEndpointException() : void {
+    $this->setPluginConfiguration('environment_url', '');
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('Missing required "environment_url" configuration.');
+    $this->getPlugin()->getEndpoints();
   }
 
   /**
-   * Sets the active environment name.
-   *
-   * @param string $env
-   *   The env name.
+   * Tests missing auto-discovered endpoint.
    */
-  private function setActiveEnvironmentName(string $env) : void {
-    $config = $this->config('helfi_api_base.environment_resolver.settings');
-    $config
-      ->set(EnvironmentResolver::ENVIRONMENT_NAME_KEY, $env)
-      ->save();
-    $this->container->get('kernel')->rebuildContainer();
+  public function testEndpointConfigurationException() : void {
+    $this->setupEndpoints(authorization: NULL);
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('Missing required "authorization" endpoint configuration.');
+    $this->getPlugin()->getEndpoints();
   }
 
   /**
    * Tests environment url configuration.
    */
   public function testEndpoints() : void {
-    // Endpoint should default to staging environment.
-    $this->assertEndpoint(Tunnistamo::STAGING_ENVIRONMENT);
-    // Make sure if we remove the environment_url setting altogether the
-    // default value still fallbacks to testing env.
-    $config = $this->getPluginConfiguration();
-    $settings = $config->get('settings');
-    unset($settings['environment_url']);
-    $config->set('settings', $settings)->save();
+    $this->setupEndpoints();
+    $this->assertEquals('https://localhost', $this->getPluginConfiguration()->get('settings')['environment_url']);
+    $endpoints = $this->getPlugin()->getEndpoints();
 
-    $this->assertEndpoint(Tunnistamo::STAGING_ENVIRONMENT);
-
-    // Endpoint should default to whatever we set as base url in
-    // 'environment_url'.
-    $this->setPluginConfiguration('environment_url', 'https://example.com');
-    $this->assertEndpoint('https://example.com');
-  }
-
-  /**
-   * Tests environment auto-detection.
-   */
-  public function testEndpointAutodetect() : void {
-    $envs = [
-      'dev' => Tunnistamo::TESTING_ENVIRONMENT,
-      'test' => Tunnistamo::TESTING_ENVIRONMENT,
-      'stage' => Tunnistamo::STAGING_ENVIRONMENT,
-      'prod' => Tunnistamo::PRODUCTION_ENVIRONMENT,
-    ];
-    foreach ($envs as $env => $url) {
-      $this->setActiveEnvironmentName($env);
-      $this->assertEndpoint($url);
+    foreach (['authorization', 'token', 'userinfo', 'end_session'] as $endpoint) {
+      $this->assertNotEmpty($endpoints[$endpoint]);
     }
   }
 

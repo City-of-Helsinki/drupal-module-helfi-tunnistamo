@@ -13,4 +13,5 @@ settings:
   client_scopes: 'openid,email'
   auto_login: 0
   client_roles: []
+  ad_roles: []
   environment_url: ''

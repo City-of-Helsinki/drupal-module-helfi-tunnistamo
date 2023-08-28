@@ -8,6 +8,8 @@ use Drupal\Core\Config\Config;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\KernelTests\KernelTestBase as CoreKernelTestBase;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
+use Drupal\Tests\helfi_api_base\Traits\ApiTestTrait;
+use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -15,6 +17,8 @@ use Symfony\Component\HttpFoundation\Response;
  * Kernel test base for tunnistamo.
  */
 abstract class KernelTestBase extends CoreKernelTestBase {
+
+  use ApiTestTrait;
 
   /**
    * {@inheritdoc}
@@ -38,6 +42,42 @@ abstract class KernelTestBase extends CoreKernelTestBase {
     $this->installConfig('helfi_tunnistamo');
     $this->installEntitySchema('action');
     $this->installEntitySchema('user');
+
+  }
+
+  /**
+   * Mocks the endpoint response.
+   *
+   * @param string|null $environmentUrl
+   *   The environment url.
+   * @param string|null $authorization
+   *   The authorization endpoint.
+   * @param string|null $token
+   *   The token endpoint.
+   * @param string|null $userinfo
+   *   The userinfo endpoint.
+   * @param string|null $endSession
+   *   The end session endpoint.
+   *
+   * @throws \Exception
+   */
+  protected function setupEndpoints(
+    ?string $environmentUrl = 'https://localhost',
+    ?string $authorization = 'https://localhost/authorization',
+    ?string $token = 'https://localhost/token',
+    ?string $userinfo = 'https://localhost/userinfo',
+    ?string $endSession = 'https://localhost/endsession'
+  ) : void {
+    $this->container->get('kernel')->rebuildContainer();
+    $this->setPluginConfiguration('environment_url', $environmentUrl);
+    $this->setupMockHttpClient([
+      new GuzzleResponse(body: json_encode([
+        'authorization_endpoint' => $authorization,
+        'token_endpoint' => $token,
+        'userinfo_endpoint' => $userinfo,
+        'end_session_endpoint' => $endSession,
+      ])),
+    ]);
   }
 
   /**

@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\GeneratedUrl;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
-use Drupal\helfi_api_base\Environment\EnvironmentResolverInterface;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
@@ -28,30 +26,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class Tunnistamo extends OpenIDConnectClientBase {
 
-  public const TESTING_ENVIRONMENT = 'https://tunnistamo.test.hel.ninja';
-  public const STAGING_ENVIRONMENT = 'https://api.hel.fi/sso-test';
-  public const PRODUCTION_ENVIRONMENT = 'https://api.hel.fi/sso';
-
-  /**
-   * Whether to send silent authentication or not.
-   *
-   * @var bool
-   */
-  private bool $silentAuthentication = FALSE;
-
   /**
    * The event dispatcher.
    *
    * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
    */
   private EventDispatcherInterface $eventDispatcher;
-
-  /**
-   * The environment resolver.
-   *
-   * @var \Drupal\helfi_api_base\Environment\EnvironmentResolverInterface
-   */
-  private EnvironmentResolverInterface $environmentResolver;
 
   /**
    * {@inheritdoc}
@@ -64,7 +44,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   ) : self {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
-    $instance->environmentResolver = $container->get('helfi_api_base.environment_resolver');
     return $instance;
   }
 
@@ -115,35 +94,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
-   * Attempt to authenticate silently without prompt.
-   *
-   * @return $this
-   *   The self.
-   */
-  public function setSilentAuthentication(): self {
-    $this->silentAuthentication = TRUE;
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getUrlOptions(
-    string $scope,
-    GeneratedUrl $redirect_uri
-  ): array {
-    $options = parent::getUrlOptions($scope, $redirect_uri);
-
-    if ($this->silentAuthentication) {
-      $options['query'] += [
-        'prompt' => 'none',
-      ];
-    }
-
-    return $options;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function authorize(string $scope = 'openid email', array $additional_params = []): Response {
@@ -175,36 +125,34 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * {@inheritdoc}
    */
   public function getEndpoints(): array {
-    $endpointMap = [
-      'dev' => self::TESTING_ENVIRONMENT,
-      'test' => self::TESTING_ENVIRONMENT,
-      'stage' => self::STAGING_ENVIRONMENT,
-      'prod' => self::PRODUCTION_ENVIRONMENT,
-    ];
-    $base = self::STAGING_ENVIRONMENT;
+    static $endpoints = [];
 
-    try {
-      // Attempt to automatically detect endpoint.
-      $env = $this->environmentResolver->getActiveEnvironmentName();
-
-      if (isset($endpointMap[$env])) {
-        $base = $endpointMap[$env];
+    if (!$endpoints) {
+      if (empty($this->configuration['environment_url'])) {
+        throw new \InvalidArgumentException('Missing required "environment_url" configuration.');
       }
-    }
-    catch (\InvalidArgumentException) {
-    }
-    // Allow environment_url config to always override automatically detected
-    // endpoint.
-    if (!empty($this->configuration['environment_url'])) {
-      $base = $this->configuration['environment_url'];
-    }
+      $configuration = $this
+        ->autoDiscover
+        ->fetch(rtrim($this->configuration['environment_url'], '/') . '/');
 
-    return [
-      'authorization' => sprintf('%s/openid/authorize/', $base),
-      'token' => sprintf('%s/openid/token/', $base),
-      'userinfo' => sprintf('%s/openid/userinfo/', $base),
-      'end_session' => sprintf('%s/openid/end-session', $base),
-    ];
+      $endpoints = [
+        'authorization' => '',
+        'token' => '',
+        'userinfo' => '',
+        'end_session' => '',
+      ];
+
+      foreach ($endpoints as $type => $value) {
+        $key = sprintf('%s_endpoint', $type);
+
+        if (!isset($configuration[$key])) {
+          throw new \InvalidArgumentException(sprintf('Missing required "%s" endpoint configuration.', $type));
+        }
+        $endpoints[$type] = $configuration[$type . '_endpoint'];
+      }
+
+    }
+    return $endpoints;
   }
 
   /**
@@ -236,16 +184,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#title' => $this->t('OpenID Connect Authorization server / Issuer'),
       '#description' => [
         [
-          '#markup' => $this->t('Url to auth server. Leave this empty to detect environment automatically. See README.md for more information.'),
-        ],
-        [
-          '#theme' => 'item_list',
-          '#items' => [
-            sprintf('DEV: %s', self::TESTING_ENVIRONMENT),
-            sprintf('TEST: %s', self::TESTING_ENVIRONMENT),
-            sprintf('STAGE: %s', self::STAGING_ENVIRONMENT),
-            sprintf('PROD: %s', self::PRODUCTION_ENVIRONMENT),
-          ],
+          '#markup' => $this->t('Url to auth server. See README.md for more information.'),
         ],
       ],
       '#default_value' => $this->configuration['environment_url'],
@@ -264,6 +203,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       $roleOptions[$role->id()] = $role->label();
     }
 
+    $form['ad_roles'] = [
+      '#type' => 'markup',
+      '#markup' => $this->t('Map AD role to Drupal role. This must be done code. See README.md for more information'),
+    ];
+
     $form['client_roles'] = [
       '#type' => 'checkboxes',
       '#multiple' => TRUE,
@@ -277,38 +221,66 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
-   * Remove existing and map new roles based on plugin configuration.
+   * Gets AD roles mapping.
+   *
+   * @return array
+   *   The AD to Drupal role map.
+   */
+  public function getAdRoles() : array {
+    return array_filter($this->configuration['ad_roles'] ?? []);
+  }
+
+  /**
+   * Grant given roles to user.
    *
    * @param \Drupal\user\UserInterface $account
-   *   The account to map roles to.
-   *
-   * @throws \Drupal\Core\Entity\EntityStorageException
+   *   The account.
+   * @param array $context
+   *   The context.
    */
-  public function mapRoles(UserInterface $account) : void {
-    // Skip role mapping if no roles are set, so we don't remove
-    // any manually set roles when this feature is not enabled.
-    if (!$roles = $this->getClientRoles()) {
+  public function mapRoles(UserInterface $account, array $context) : void {
+    $roles = $this->getClientRoles();
+    $adRoles = $this->getAdRoles();
+
+    if (!$roles && !$adRoles) {
       return;
     }
 
-    // Remove all existing roles.
     array_map(
       fn (string $rid) => $account->removeRole($rid),
       $account->getRoles(FALSE)
     );
 
-    // Add new roles from plugin config.
-    array_map(function (string $rid) use ($account) {
-      // Trying to add authenticated or anonymous role will throw an
+    if ($adRoles && !empty($context['userinfo']['ad_groups'])) {
+      foreach ($adRoles as $map) {
+        ['ad_role' => $adRole, 'roles' => $drupalRoles] = $map;
+
+        if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
+          continue;
+        }
+
+        if (!is_array($drupalRoles)) {
+          $drupalRoles = [$drupalRoles];
+        }
+
+        foreach ($drupalRoles as $value) {
+          $roles[] = $value;
+        }
+      }
+    }
+
+    foreach ($roles as $rid) {
+      // Trying to add the authenticated/anonymous role will throw an
       // exception.
       if (in_array($rid, [
         AccountInterface::AUTHENTICATED_ROLE,
         AccountInterface::ANONYMOUS_ROLE,
       ])) {
-        return;
+        continue;
       }
       $account->addRole($rid);
-    }, $roles);
+    }
+
     $account->save();
   }
 
@@ -342,16 +314,12 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function setUserPreferredAdminLanguage(UserInterface $account) : void {
     try {
-      if (
-        $this->environmentResolver->getActiveProject() &&
-        !$account->getPreferredAdminLangcode(FALSE)
-      ) {
+      if (!$account->getPreferredAdminLangcode(FALSE)) {
         $account->set('preferred_admin_langcode', 'fi');
         $account->save();
       }
     }
-    catch (\Exception $e) {
-      return;
+    catch (\Exception) {
     }
   }
 

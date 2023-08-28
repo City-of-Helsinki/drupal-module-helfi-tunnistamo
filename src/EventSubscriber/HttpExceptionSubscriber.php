@@ -95,12 +95,6 @@ final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
     ) {
       return;
     }
-    $isFrameRequest = $event->getRequest()->headers->get('Sec-Fetch-Dest') === 'iframe';
-
-    // Do silent authentication if site is served from an iframe.
-    if ($isFrameRequest) {
-      $plugin->setSilentAuthentication();
-    }
     $response = $plugin->authorize(implode(' ', $plugin->getClientScopes()));
     $this->session->saveDestination();
 
