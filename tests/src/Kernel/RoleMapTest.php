@@ -44,7 +44,12 @@ class RoleMapTest extends KernelTestBase {
 
     $role2 = $this->createRole([], 'test2');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
-    $this->setPluginConfiguration('ad_roles', ['ad_role' => $role2]);
+    $this->setPluginConfiguration('ad_roles', [
+      [
+        'ad_role' => 'ad_role',
+        'roles' => [$role2],
+      ],
+    ]);
     $this->getPlugin()->mapRoles($account, []);
     $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
     $this->assertEquals([

@@ -252,7 +252,9 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     );
 
     if ($adRoles && !empty($context['userinfo']['ad_groups'])) {
-      foreach ($adRoles as $adRole => $drupalRoles) {
+      foreach ($adRoles as $map) {
+        ['ad_role' => $adRole, 'roles' => $drupalRoles] = $map;
+
         if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
           continue;
         }
@@ -261,8 +263,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
           $drupalRoles = [$drupalRoles];
         }
 
-        foreach ($drupalRoles as $drupalRole) {
-          $roles[] = $drupalRole;
+        foreach ($drupalRoles as $value) {
+          $roles[] = $value;
         }
       }
     }

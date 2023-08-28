@@ -32,4 +32,11 @@ openid_connect.client.plugin.tunnistamo:
       type: sequence
       label: 'AD roles to automatically map to user using this client'
       sequence:
-        type: string
+        type: mapping
+        mapping:
+          ad_role:
+            type: string
+          roles:
+            type: sequence
+            sequence:
+              type: string
