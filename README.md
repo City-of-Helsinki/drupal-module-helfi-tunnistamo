@@ -45,5 +45,3 @@ See https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/828322613
 ## Contact
 
 Slack: #helfi-drupal (http://helsinkicity.slack.com/)
-
-Mail: `drupal@hel.fi`
