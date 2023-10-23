@@ -9,15 +9,23 @@ Provides an integration to [City-of-Helsinki/tunnistamo](https://github.com/City
 Tunnistamo client should be enabled automatically, but in case it wasn't, you can
 enable `tunnistamo` client from `/admin/config/services/openid-connect`.
 
-## Redirect URL
+Contact the Helsinki Profiili team for client credentials. Make sure only AD authentication method is enabled.
 
-`https://example.com/openid-connect/tunnistamo`
+The redirect URL should be `https://example.com/openid-connect/tunnistamo` when using the default configuration.
 
-## Authorization servers
+## Configuration
 
-See https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli
+Populate the following environment variables:
 
-## Map AD group to a Drupal role automatically
+- `TUNNISTAMO_CLIENT_ID`: The client ID
+- `TUNNISTAMO_CLIENT_SECRET`: The client secret
+- `TUNNISTAMO_ENVIRONMENT_URL`: See [Authorization servers](https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli) for available environments
+
+### Hide Tunnistamo login button
+
+Go to Configuration &rarr; OpenID Connect &rarr; Settings and change `OpenID buttons display in user login form` setting to `Hidden`.
+
+## Automatically map AD group to a Drupal role
 
 ```php
 $config['openid_connect.client.azure-ad']['settings']['ad_roles'] = [
@@ -36,8 +44,8 @@ Add something like this to your `local.settings.php` file:
 # public/sites/default/local.settings.php
 $config['openid_connect.client.tunnistamo']['settings']['client_id'] = 'your-tunnistamo-client-id';
 $config['openid_connect.client.tunnistamo']['settings']['client_secret'] = 'your-client-secret';
-// This might be something else, like 'https://tunnistamo.test.hel.ninja'.
-$config['openid_connect.client.tunnistamo']['settings']['environment_url'] = 'https://api.hel.fi/sso';
+// See the Confluence link below for available environments.
+$config['openid_connect.client.tunnistamo']['settings']['environment_url'] = 'http://example.com';
 ```
 
 See https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli for more information.
