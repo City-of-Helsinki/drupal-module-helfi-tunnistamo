@@ -87,7 +87,10 @@ abstract class KernelTestBase extends CoreKernelTestBase {
    *   The tunnistamo client.
    */
   protected function getPlugin() : Tunnistamo {
-    return OpenIDConnectClientEntity::load('tunnistamo')->getPlugin();
+    $plugin = OpenIDConnectClientEntity::load('tunnistamo')->getPlugin();
+    assert($plugin instanceof Tunnistamo);
+
+    return $plugin;
   }
 
   /**

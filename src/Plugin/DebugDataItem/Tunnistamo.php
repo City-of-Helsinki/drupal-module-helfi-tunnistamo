@@ -62,6 +62,7 @@ final class Tunnistamo extends DebugDataItemPluginBase implements ContainerFacto
 
     $storage = $this->entityTypeManager->getStorage('openid_connect_client');
 
+    /** @var \Drupal\openid_connect\OpenIDConnectClientEntityInterface $client */
     foreach ($storage->loadMultiple() as $client) {
       if (!$client->getPlugin() instanceof TunnistamoClient) {
         continue;

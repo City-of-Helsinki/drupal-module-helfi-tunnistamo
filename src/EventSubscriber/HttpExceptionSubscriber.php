@@ -18,13 +18,6 @@ use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
 
   /**
-   * The OIDC storage.
-   *
-   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface
-   */
-  private ConfigEntityStorageInterface $storage;
-
-  /**
    * Constructs a new instance.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
@@ -35,11 +28,10 @@ final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
    *   The account proxy.
    */
   public function __construct(
-    EntityTypeManagerInterface $entityTypeManager,
+    private EntityTypeManagerInterface $entityTypeManager,
     private OpenIDConnectSession $session,
     private AccountProxyInterface $accountProxy
   ) {
-    $this->storage = $entityTypeManager->getStorage('openid_connect_client');
   }
 
   /**
@@ -63,11 +55,15 @@ final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
    *   The tunnistamo client or null.
    */
   private function getClient() : ? Tunnistamo {
-    $entities = $this->storage
+    $entities = $this->entityTypeManager
+      ->getStorage('openid_connect_client')
       ->loadByProperties(['plugin' => 'tunnistamo']);
 
     /** @var \Drupal\openid_connect\Entity\OpenIDConnectClientEntity $entity */
     foreach ($entities as $entity) {
+      if (!$entity->getPlugin() instanceof Tunnistamo) {
+        continue;
+      }
       if ($entity->getPlugin()?->autoLogin()) {
         return $entity->getPlugin();
       }
