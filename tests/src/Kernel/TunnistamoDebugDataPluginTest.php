@@ -31,6 +31,8 @@ class TunnistamoDebugDataPluginTest extends KernelTestBase {
 
   /**
    * @covers ::collect
+   * @covers ::__construct
+   * @covers ::create
    */
   public function testCollect() : void {
     /** @var \Drupal\helfi_api_base\DebugDataItemPluginManager $manager */
