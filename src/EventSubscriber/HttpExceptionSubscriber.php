@@ -4,7 +4,6 @@ declare(strict_types = 1);
 
 namespace Drupal\helfi_tunnistamo\EventSubscriber;
 
-use Drupal\Core\Config\Entity\ConfigEntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\EventSubscriber\HttpExceptionSubscriberBase;
 use Drupal\Core\Session\AccountProxyInterface;
