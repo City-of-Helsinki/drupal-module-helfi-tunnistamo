@@ -19,7 +19,7 @@ Populate the following environment variables:
 
 - `TUNNISTAMO_CLIENT_ID`: The client ID
 - `TUNNISTAMO_CLIENT_SECRET`: The client secret
-- `TUNNISTAMO_ENVIRONMENT_URL`: See [Authorization servers](https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli) for available environments
+- `TUNNISTAMO_ENVIRONMENT_URL`: See [Authorization servers](https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli) for available environments. Please note the authorization server is tied to your credentials
 
 ### Hide Tunnistamo login button
 
