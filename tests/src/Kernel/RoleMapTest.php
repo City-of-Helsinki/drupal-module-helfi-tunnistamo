@@ -49,6 +49,11 @@ class RoleMapTest extends KernelTestBase {
         'ad_role' => 'ad_role',
         'roles' => [$role2],
       ],
+      // Test non-existent ad role.
+      [
+        'ad_role' => 'non_existent',
+        'roles' => [$role2],
+      ],
     ]);
     $this->getPlugin()->mapRoles($account, []);
     $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
