@@ -35,25 +35,17 @@ class UserInfoAlterTest extends KernelTestBase {
    *
    * @param array $userInfo
    *   The userinfo.
-   * @param string $scopes
-   *   The scopes.
    *
    * @return \Drupal\openid_connect\OpenIDConnectClientEntityInterface
    *   The client mock.
    */
-  private function getClientMock(array $userInfo, string $scopes = '') : OpenIDConnectClientEntityInterface {
+  private function getClientMock(array $userInfo) : OpenIDConnectClientEntityInterface {
     $plugin = $this->prophesize(OpenIDConnectClientInterface::class);
     $plugin->usesUserInfo()->willReturn(TRUE);
     $plugin->retrieveUserInfo(Argument::cetera())->willReturn($userInfo);
     $client = $this->prophesize(OpenIDConnectClientEntityInterface::class);
     $client->id()->willReturn('tunnistamo');
     $client->getPlugin()->willReturn($plugin->reveal());
-    // OpenIdConnect::buildContext() passes 'plugin_id' string to
-    // hook_openid_connect_userinfo_alter() hook instead of the actual plugin
-    // object, meaning our alter hook has to load the actual client entity,
-    // and we cannot mock the client scopes here.
-    // Modify the client scopes on default Tunnistamo client entity.
-    $this->setPluginConfiguration('client_scopes', $scopes);
 
     return $client->reveal();
   }
@@ -73,20 +65,17 @@ class UserInfoAlterTest extends KernelTestBase {
    *
    * @dataProvider authorizationData
    */
-  public function testAuthorization(array $userInfo, string $scopes, bool $expectedStatus) : void {
+  public function testAuthorization(array $userInfo, string $expectedEmail) : void {
     $status = $this->openIdConnect()
-      ->completeAuthorization($this->getClientMock($userInfo, $scopes), [
+      ->completeAuthorization($this->getClientMock($userInfo), [
         'access_token' => '123',
       ]);
-    $this->assertSame($expectedStatus, $status);
+    $this->assertTrue($status);
 
-    // Make sure account is actually created.
-    if ($status) {
-      /** @var \Drupal\externalauth\Authmap $authmap */
-      $authmap = $this->container->get('externalauth.authmap');
-      $uid = $authmap->getUid($userInfo['sub'], 'openid_connect.tunnistamo');
-      $this->assertEquals(helfi_tunnistamo_create_email($userInfo), User::load($uid)->getEmail());
-    }
+    /** @var \Drupal\externalauth\Authmap $authmap */
+    $authmap = $this->container->get('externalauth.authmap');
+    $uid = $authmap->getUid($userInfo['sub'], 'openid_connect.tunnistamo');
+    $this->assertEquals($expectedEmail, User::load($uid)->getEmail());
   }
 
   /**
@@ -97,26 +86,22 @@ class UserInfoAlterTest extends KernelTestBase {
    */
   public function authorizationData() : array {
     return [
-      // Make sure authorization fails when a user has no email address or
-      // client doesn't define 'ad_groups' scope.
-      [
-        [
-          'email' => '',
-          'sub' => '123',
-        ],
-        'email',
-        FALSE,
-      ],
       // Make sure authorization succeeds, and a random email address is
-      // generated when a user has no email, but the client has 'ad_groups'
-      // scope set.
+      // generated when a user has no email.
       [
         [
           'email' => '',
           'sub' => '123',
         ],
-        'ad_groups',
-        TRUE,
+        '123+placeholder@hel.fi',
+      ],
+      // Make sure the original email is used when set.
+      [
+        [
+          'email' => 'test@example.com',
+          'sub' => '123',
+        ],
+        'test@example.com',
       ],
     ];
   }

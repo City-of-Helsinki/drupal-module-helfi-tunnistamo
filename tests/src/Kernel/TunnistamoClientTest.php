@@ -13,6 +13,19 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 class TunnistamoClientTest extends KernelTestBase {
 
   /**
+   * Make sure the correct scopes are returned.
+   *
+   * @covers ::getClientScopes
+   */
+  public function testGetClientScopes() : void {
+    $plugin = $this->getPlugin();
+    $config = $plugin->getConfiguration();
+    $this->assertSame($config['client_scopes'], $plugin->defaultConfiguration()['client_scopes']);
+    $this->setPluginConfiguration('client_scopes', '');
+    $this->assertSame([], $this->getPlugin()->getClientScopes());
+  }
+
+  /**
    * Make sure Tunnistamo is enabled by default.
    *
    * @covers ::getConfiguration

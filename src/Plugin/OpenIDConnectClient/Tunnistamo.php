@@ -246,6 +246,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       return;
     }
 
+    // Remove all existing roles.
     array_map(
       fn (string $rid) => $account->removeRole($rid),
       $account->getRoles(FALSE)
@@ -258,11 +259,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
         if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
           continue;
         }
-
-        if (!is_array($drupalRoles)) {
-          $drupalRoles = [$drupalRoles];
-        }
-
         foreach ($drupalRoles as $value) {
           $roles[] = $value;
         }
@@ -301,7 +297,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     $scopes = $this->configuration['client_scopes'] ?? [];
 
     if (!$scopes) {
-      return ['openid', 'email', 'ad_groups'];
+      return [];
     }
     return explode(',', $this->configuration['client_scopes']);
   }
