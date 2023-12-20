@@ -70,8 +70,8 @@ function helfi_tunnistamo_openid_connect_userinfo_alter(
     return;
   }
 
-  // If the user email is missing, replace it with a made-up address (issue with @edu.hel.fi
-  // users).
+  // If the user email is missing, replace it with a made-up address (issue
+  // with @edu.hel.fi users).
   if (empty($userinfo['email'])) {
     $userinfo['email'] = helfi_tunnistamo_create_email($userinfo);
   }
