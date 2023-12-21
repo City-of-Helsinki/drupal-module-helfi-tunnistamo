@@ -297,7 +297,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     $scopes = $this->configuration['client_scopes'] ?? [];
 
     if (!$scopes) {
-      return [];
+      return parent::getClientScopes();
     }
     return explode(',', $this->configuration['client_scopes']);
   }
