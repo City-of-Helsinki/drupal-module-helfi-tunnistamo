@@ -22,7 +22,7 @@ class TunnistamoClientTest extends KernelTestBase {
     $config = $plugin->getConfiguration();
     $this->assertSame($config['client_scopes'], $plugin->defaultConfiguration()['client_scopes']);
     $this->setPluginConfiguration('client_scopes', '');
-    $this->assertSame([], $this->getPlugin()->getClientScopes());
+    $this->assertSame(['openid', 'email'], $this->getPlugin()->getClientScopes());
   }
 
   /**
