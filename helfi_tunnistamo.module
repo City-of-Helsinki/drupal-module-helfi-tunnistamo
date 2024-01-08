@@ -75,4 +75,14 @@ function helfi_tunnistamo_openid_connect_userinfo_alter(
   if (empty($userinfo['email'])) {
     $userinfo['email'] = helfi_tunnistamo_create_email($userinfo);
   }
+
+  // Unset preferred_username if it is a UUID so that new users get their
+  // name from `name` field instead.
+  if (
+    !empty($userinfo['preferred_username'])
+    && preg_match('/^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/', $userinfo['preferred_username'])
+  ) {
+    unset($userinfo['preferred_username']);
+  }
+
 }
