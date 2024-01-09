@@ -27,6 +27,7 @@ class UserInfoAlterTest extends KernelTestBase {
     parent::setUp();
 
     $this->installSchema('externalauth', ['authmap']);
+    $this->installSchema('user', ['users_data']);
     $this->installConfig('user');
   }
 
@@ -61,11 +62,11 @@ class UserInfoAlterTest extends KernelTestBase {
   }
 
   /**
-   * Tests authorization email fallback.
+   * Tests authorization email and username fallback.
    *
    * @dataProvider authorizationData
    */
-  public function testAuthorization(array $userInfo, string $expectedEmail) : void {
+  public function testAuthorization(array $userInfo, string $expectedEmail, string $expectedUsername) : void {
     $status = $this->openIdConnect()
       ->completeAuthorization($this->getClientMock($userInfo), [
         'access_token' => '123',
@@ -75,7 +76,9 @@ class UserInfoAlterTest extends KernelTestBase {
     /** @var \Drupal\externalauth\Authmap $authmap */
     $authmap = $this->container->get('externalauth.authmap');
     $uid = $authmap->getUid($userInfo['sub'], 'openid_connect.tunnistamo');
-    $this->assertEquals($expectedEmail, User::load($uid)->getEmail());
+    $user = User::load($uid);
+    $this->assertEquals($expectedEmail, $user->getEmail());
+    $this->assertEquals($expectedUsername, $user->getAccountName());
   }
 
   /**
@@ -92,16 +95,22 @@ class UserInfoAlterTest extends KernelTestBase {
         [
           'email' => '',
           'sub' => '123',
+          'name' => 'Cats',
+          'preferred_username' => '9cf5e439-529b-4d6c-b9f3-4738fb90c55f',
         ],
         '123+placeholder@hel.fi',
+        'Cats',
       ],
       // Make sure the original email is used when set.
       [
         [
           'email' => 'test@example.com',
           'sub' => '123',
+          'name' => 'Cats',
+          'preferred_username' => 'Dogs',
         ],
         'test@example.com',
+        'Dogs',
       ],
     ];
   }

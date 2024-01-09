@@ -7,6 +7,7 @@
 
 declare(strict_types = 1);
 
+use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
@@ -75,4 +76,11 @@ function helfi_tunnistamo_openid_connect_userinfo_alter(
   if (empty($userinfo['email'])) {
     $userinfo['email'] = helfi_tunnistamo_create_email($userinfo);
   }
+
+  // Unset preferred_username if it is a UUID so that new users get their
+  // name from `name` field instead.
+  if (!empty($userinfo['preferred_username']) && Uuid::isValid($userinfo['preferred_username'])) {
+    unset($userinfo['preferred_username']);
+  }
+
 }
