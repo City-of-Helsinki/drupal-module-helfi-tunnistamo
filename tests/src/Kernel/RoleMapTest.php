@@ -6,6 +6,9 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Psr\Log\LoggerInterface;
 
 /**
  * Tests Tunnistamo role map functionality.
@@ -15,6 +18,7 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 class RoleMapTest extends KernelTestBase {
 
   use UserCreationTrait;
+  use ProphecyTrait;
 
   /**
    * Tests that roles are mapped accordingly.
@@ -25,7 +29,7 @@ class RoleMapTest extends KernelTestBase {
     $role = $this->createRole([], 'test');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
 
-    $this->getPlugin()->mapRoles($account, []);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => []]);
     // Our account should have the newly added role now.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
@@ -62,6 +66,19 @@ class RoleMapTest extends KernelTestBase {
       $role,
       $role2,
     ], $account->getRoles());
+  }
+
+  /**
+   * Tests group debug logging.
+   */
+  public function testDebugLogging() : void {
+    $account = $this->createUser();
+    $logger = $this->prophesize(LoggerInterface::class);
+    $logger->info(Argument::containingString('test_group'))
+      ->shouldBeCalled();
+    $this->container->set('logger.channel.helfi_tunnistamo', $logger->reveal());
+    $this->setPluginConfiguration('debug_log', TRUE);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['test_group']]]);
   }
 
 }

@@ -12,6 +12,7 @@ use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\UserInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,6 +35,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   private EventDispatcherInterface $eventDispatcher;
 
   /**
+   * The logger.
+   *
+   * @var \Psr\Log\LoggerInterface
+   */
+  private LoggerInterface $logger;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(
@@ -44,6 +52,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   ) : self {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
+    $instance->logger = $container->get('logger.channel.helfi_tunnistamo');
     return $instance;
   }
 
@@ -56,6 +65,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       'environment_url' => '',
       'auto_login' => FALSE,
       'client_roles' => [],
+      'debug_log' => FALSE,
     ] + parent::defaultConfiguration();
   }
 
@@ -74,6 +84,16 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function autoLogin(): bool {
     return (bool) $this->configuration['auto_login'];
+  }
+
+  /**
+   * Whether 'debug_log' setting is enabled or not.
+   *
+   * @return bool
+   *   TRUE if we should debug log.
+   */
+  private function isDebugLogEnabled(): bool {
+    return (bool) $this->configuration['debug_log'];
   }
 
   /**
@@ -239,6 +259,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *   The context.
    */
   public function mapRoles(UserInterface $account, array $context) : void {
+    if ($this->isDebugLogEnabled()) {
+      $this->logger->info(vsprintf('ad groups for uid %s: %s', [
+        $account->id(),
+        implode(',', $context['userinfo']['ad_groups'] ?? []),
+      ]));
+    }
+
     $roles = $this->getClientRoles();
     $adRoles = $this->getAdRoles();
 

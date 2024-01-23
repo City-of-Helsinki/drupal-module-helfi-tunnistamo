@@ -4,3 +4,6 @@ services:
     arguments: ['@entity_type.manager', '@openid_connect.session', '@current_user']
     tags:
       - { name: event_subscriber }
+  logger.channel.helfi_tunnistamo:
+    parent: logger.channel_base
+    arguments: [ 'helfi_tunnistamo' ]
