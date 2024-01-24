@@ -29,7 +29,7 @@ class RoleMapTest extends KernelTestBase {
     $role = $this->createRole([], 'test');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
 
-    $this->getPlugin()->mapRoles($account, ['userinfo' => []]);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => []]]);
     // Our account should have the newly added role now.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
@@ -41,6 +41,15 @@ class RoleMapTest extends KernelTestBase {
     ]);
 
     $this->getPlugin()->mapRoles($account, []);
+
+    // Make sure our custom role is not removed since ad_groups was not set.
+    $this->assertEquals([
+      AccountInterface::AUTHENTICATED_ROLE,
+      $role,
+    ], $account->getRoles());
+
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => []]]);
+
     // Make sure our custom role is removed.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
@@ -59,7 +68,6 @@ class RoleMapTest extends KernelTestBase {
         'roles' => [$role2],
       ],
     ]);
-    $this->getPlugin()->mapRoles($account, []);
     $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,

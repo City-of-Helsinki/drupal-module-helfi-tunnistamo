@@ -266,6 +266,13 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       ]));
     }
 
+    // User groups has values when authenticated through Helsinki/Espoo AD,
+    // otherwise the variable is empty. Do not modify manually assigned roles
+    // if ad_groups variable is not set.
+    if (!isset($context['userinfo']['ad_groups'])) {
+      return;
+    }
+
     $roles = $this->getClientRoles();
     $adRoles = $this->getAdRoles();
 
