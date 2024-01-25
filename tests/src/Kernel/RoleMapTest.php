@@ -6,6 +6,9 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Psr\Log\LoggerInterface;
 
 /**
  * Tests Tunnistamo role map functionality.
@@ -15,6 +18,7 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 class RoleMapTest extends KernelTestBase {
 
   use UserCreationTrait;
+  use ProphecyTrait;
 
   /**
    * Tests that roles are mapped accordingly.
@@ -25,7 +29,7 @@ class RoleMapTest extends KernelTestBase {
     $role = $this->createRole([], 'test');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
 
-    $this->getPlugin()->mapRoles($account, []);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => []]]);
     // Our account should have the newly added role now.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
@@ -37,6 +41,15 @@ class RoleMapTest extends KernelTestBase {
     ]);
 
     $this->getPlugin()->mapRoles($account, []);
+
+    // Make sure our custom role is not removed since ad_groups was not set.
+    $this->assertEquals([
+      AccountInterface::AUTHENTICATED_ROLE,
+      $role,
+    ], $account->getRoles());
+
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => []]]);
+
     // Make sure our custom role is removed.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
@@ -55,13 +68,25 @@ class RoleMapTest extends KernelTestBase {
         'roles' => [$role2],
       ],
     ]);
-    $this->getPlugin()->mapRoles($account, []);
     $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
       $role,
       $role2,
     ], $account->getRoles());
+  }
+
+  /**
+   * Tests group debug logging.
+   */
+  public function testDebugLogging() : void {
+    $account = $this->createUser();
+    $logger = $this->prophesize(LoggerInterface::class);
+    $logger->info(Argument::containingString('test_group'))
+      ->shouldBeCalled();
+    $this->container->set('logger.channel.helfi_tunnistamo', $logger->reveal());
+    $this->setPluginConfiguration('debug_log', TRUE);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['test_group']]]);
   }
 
 }

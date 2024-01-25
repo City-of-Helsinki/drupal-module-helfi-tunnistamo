@@ -15,3 +15,4 @@ settings:
   client_roles: []
   ad_roles: []
   environment_url: ''
+  debug_log: false
