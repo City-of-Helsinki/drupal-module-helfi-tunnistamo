@@ -62,11 +62,33 @@ class UserInfoAlterTest extends KernelTestBase {
   }
 
   /**
+   * Tests normal user trying to use edu client.
+   */
+  public function testEduClientWithEmail() : void {
+    $userInfo = [
+      'email' => 'test@example.com',
+      'sub' => '123',
+    ];
+
+    $this->setPluginConfiguration('edu_client', TRUE);
+    $status = $this->openIdConnect()
+      ->completeAuthorization($this->getClientMock($userInfo), [
+        'access_token' => '123',
+      ]);
+
+    // Users with email cannot log in using edu client.
+    $this->assertFalse($status);
+  }
+
+  /**
    * Tests authorization email and username fallback.
    *
    * @dataProvider authorizationData
    */
   public function testAuthorization(array $userInfo, string $expectedEmail, string $expectedUsername) : void {
+    // Allow empty usernames:
+    $this->setPluginConfiguration('edu_client', empty($userInfo['email']));
+
     $status = $this->openIdConnect()
       ->completeAuthorization($this->getClientMock($userInfo), [
         'access_token' => '123',

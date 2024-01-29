@@ -14,6 +14,27 @@ use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Drupal\user\UserInterface;
 
 /**
+ * Implements hook_openid_connect_pre_authorize().
+ */
+function helfi_tunnistamo_openid_connect_pre_authorize(UserInterface|bool $account, array $context) : bool {
+  $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
+
+  if (!$plugin instanceof Tunnistamo) {
+    return TRUE;
+  }
+
+  // Only allow users with placeholder emails to use edu client. The edu client
+  // is a fallback mechanism to work around HP-2147. Non edu.hel.fi users
+  // must use other authentication methods.
+  // @todo remove separate clients when issues with edu.hel.fi users are fixed.
+  if ($plugin->isEduClient()) {
+    return $context['userinfo']['email_is_placeholder'] ?? FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
  * Implements hook_openid_connect_post_authorize().
  */
 function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) : void {
@@ -71,10 +92,11 @@ function helfi_tunnistamo_openid_connect_userinfo_alter(
     return;
   }
 
-  // If the user email is missing, replace it with a made-up address (issue
-  // with @edu.hel.fi users).
   if (empty($userinfo['email'])) {
+    // If the user email is missing, replace it with a made-up address (issue
+    // with @edu.hel.fi users).
     $userinfo['email'] = helfi_tunnistamo_create_email($userinfo);
+    $userinfo['email_is_placeholder'] = TRUE;
   }
 
   // Unset preferred_username if it is a UUID so that new users get their

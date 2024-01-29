@@ -16,3 +16,4 @@ settings:
   ad_roles: []
   environment_url: ''
   debug_log: false
+  edu_client: false

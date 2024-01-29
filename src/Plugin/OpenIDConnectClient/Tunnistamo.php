@@ -66,6 +66,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       'auto_login' => FALSE,
       'client_roles' => [],
       'debug_log' => FALSE,
+      'edu_client' => FALSE,
     ] + parent::defaultConfiguration();
   }
 
@@ -94,6 +95,16 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   private function isDebugLogEnabled(): bool {
     return (bool) $this->configuration['debug_log'];
+  }
+
+  /**
+   * Whether 'edu_client' setting is enabled or not.
+   *
+   * @return bool
+   *   TRUE if this client supports edu.hel.fi users.
+   */
+  public function isEduClient(): bool {
+    return (bool) $this->configuration['edu_client'];
   }
 
   /**

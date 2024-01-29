@@ -43,3 +43,6 @@ openid_connect.client.plugin.tunnistamo:
     debug_log:
       type: boolean
       label: 'Log ad groups for debugging'
+    edu_client:
+      type: boolean
+      label: 'Support login when email is missing (issue with edu.hel.fi users)'
