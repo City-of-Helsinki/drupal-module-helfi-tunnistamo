@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
@@ -15,7 +14,6 @@ use Drupal\user\UserInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Implements OpenID Connect Client plugin for Tunnistamo.
@@ -111,34 +109,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       $this
     ));
     return $urlEvent->getRedirectUrl();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function authorize(string $scope = 'openid email', array $additional_params = []): Response {
-    // @todo Remove this override once https://www.drupal.org/project/openid_connect/issues/3317308
-    // is merged.
-    $redirect_uri = $this->getRedirectUrl()->toString(TRUE);
-    $url_options = $this->getUrlOptions($scope, $redirect_uri);
-
-    if (!empty($additional_params)) {
-      $url_options['query'] = array_merge($url_options['query'], $additional_params);
-    }
-
-    $endpoints = $this->getEndpoints();
-    // Clear _GET['destination'] because we need to override it.
-    $this->requestStack->getCurrentRequest()->query->remove('destination');
-    $authorization_endpoint = Url::fromUri($endpoints['authorization'], $url_options)->toString(TRUE);
-
-    $this->loggerFactory->get('openid_connect_' . $this->pluginId)->debug('Send authorize request to @url', ['@url' => $authorization_endpoint->getGeneratedUrl()]);
-    $response = new TrustedRedirectResponse($authorization_endpoint->getGeneratedUrl());
-    // We can't cache the response, since this will prevent the state to be
-    // added to the session. The kill switch will prevent the page getting
-    // cached for anonymous users when page cache is active.
-    $this->pageCacheKillSwitch->trigger();
-
-    return $response;
   }
 
   /**

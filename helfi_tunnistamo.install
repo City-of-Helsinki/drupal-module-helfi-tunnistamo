@@ -5,7 +5,7 @@
  * Contains installation tasks for 'helfi_tunnistamo' module.
  */
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 use Drupal\user\Entity\User;
 
