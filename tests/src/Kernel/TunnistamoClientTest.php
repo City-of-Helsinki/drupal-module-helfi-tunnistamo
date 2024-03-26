@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
+use Drupal\Core\Form\FormState;
+use Drupal\user\Entity\Role;
+
 /**
  * Tests Tunnistamo configuration.
  *
@@ -74,6 +77,22 @@ class TunnistamoClientTest extends KernelTestBase {
     foreach (['authorization', 'token', 'userinfo', 'end_session'] as $endpoint) {
       $this->assertNotEmpty($endpoints[$endpoint]);
     }
+  }
+
+  /**
+   * Tests configuration form default values.
+   */
+  public function testConfigurationForm() : void {
+    Role::create(['id' => 'test', 'label' => 'test'])->save();
+    $this->setupEndpoints();
+    $plugin = $this->getPlugin();
+    $configuration = $plugin->getConfiguration();
+    $form = $plugin->buildConfigurationForm([], new FormState());
+    $this->assertEquals($configuration['auto_login'], $form['auto_login']['#default_value']);
+    $this->assertEquals($configuration['client_scopes'], $form['client_scopes']['#default_value']);
+    $this->assertEquals('https://localhost', $form['environment_url']['#default_value']);
+    $this->assertEquals(['test' => 'test'], $form['client_roles']['#options']);
+    $this->assertEquals($configuration['client_roles'], $form['client_roles']['#default_value']);
   }
 
 }
