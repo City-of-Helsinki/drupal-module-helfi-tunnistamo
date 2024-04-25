@@ -8,9 +8,6 @@
         "drupal/helfi_api_base": "*",
         "drupal/openid_connect": "^3.0"
     },
-    "conflict": {
-        "drupal/helfi_api_base": "<=2.7.1"
-    },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
         "drupal/coder": "^8.3"
