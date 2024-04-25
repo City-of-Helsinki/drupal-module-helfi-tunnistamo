@@ -8,6 +8,8 @@
 declare(strict_types=1);
 
 use Drupal\Component\Uuid\Uuid;
+use Drupal\Core\Database\Query\AlterableInterface;
+use Drupal\Core\Database\Query\SelectInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
@@ -36,7 +38,7 @@ function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_
     return;
   }
 
-  if (!\Drupal::service('externalauth.authmap')->getAll($account->id())) {
+  if (!Drupal::service('externalauth.authmap')->getAll($account->id())) {
     return;
   }
   // Prevent users from changing the email if they have used openid_connect
@@ -63,7 +65,7 @@ function helfi_tunnistamo_create_email(array $userinfo) : string {
  */
 function helfi_tunnistamo_openid_connect_userinfo_alter(
   array &$userinfo,
-  array $context
+  array $context,
 ) : void {
   $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
 
@@ -83,4 +85,17 @@ function helfi_tunnistamo_openid_connect_userinfo_alter(
     unset($userinfo['preferred_username']);
   }
 
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ *
+ * Exclude Tunnistamo users from User Expire feature.
+ */
+function helfi_tunnistamo_query_expired_users_alter(AlterableInterface $query) : void {
+  assert($query instanceof SelectInterface);
+  // Only load users that have no 'authmap' entry. This should exclude
+  // all Tunnistamo users.
+  $query->leftJoin('authmap', 'a', 'a.uid = users_field_data.uid');
+  $query->condition('a.uid', operator: 'IS NULL');
 }

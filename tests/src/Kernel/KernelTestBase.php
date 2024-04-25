@@ -42,6 +42,7 @@ abstract class KernelTestBase extends CoreKernelTestBase {
     $this->installConfig('helfi_tunnistamo');
     $this->installEntitySchema('action');
     $this->installEntitySchema('user');
+    $this->installSchema('externalauth', ['authmap']);
 
   }
 
@@ -66,7 +67,7 @@ abstract class KernelTestBase extends CoreKernelTestBase {
     ?string $authorization = 'https://localhost/authorization',
     ?string $token = 'https://localhost/token',
     ?string $userinfo = 'https://localhost/userinfo',
-    ?string $endSession = 'https://localhost/endsession'
+    ?string $endSession = 'https://localhost/endsession',
   ) : void {
     $this->container->get('kernel')->rebuildContainer();
     $this->setPluginConfiguration('environment_url', $environmentUrl);
