@@ -24,7 +24,7 @@ class UserExpireTest extends KernelTestBase {
   protected function setUp() : void {
     parent::setUp();
 
-    /** @var \Drupal\helfi_api_base\Features\FeatureManager $manager */
+    /** @var \Drupal\helfi_api_base\Features\FeatureManager $featureManager */
     $featureManager = $this->container->get(FeatureManager::class);
     $featureManager->enableFeature(FeatureManager::USER_EXPIRE);
   }
