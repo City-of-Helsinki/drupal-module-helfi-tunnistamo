@@ -26,7 +26,6 @@ class UserInfoAlterTest extends KernelTestBase {
   protected function setUp() : void {
     parent::setUp();
 
-    $this->installSchema('externalauth', ['authmap']);
     $this->installSchema('user', ['users_data']);
     $this->installConfig('user');
   }

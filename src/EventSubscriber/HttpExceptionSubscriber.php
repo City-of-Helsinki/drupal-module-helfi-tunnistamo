@@ -29,7 +29,7 @@ final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
   public function __construct(
     private EntityTypeManagerInterface $entityTypeManager,
     private OpenIDConnectSession $session,
-    private AccountProxyInterface $accountProxy
+    private AccountProxyInterface $accountProxy,
   ) {
   }
 

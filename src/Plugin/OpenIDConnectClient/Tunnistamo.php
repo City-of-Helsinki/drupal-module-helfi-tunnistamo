@@ -46,7 +46,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     ContainerInterface $container,
     array $configuration,
     $plugin_id,
-    $plugin_definition
+    $plugin_definition,
   ) : self {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
@@ -99,7 +99,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   protected function getRedirectUrl(
     array $route_parameters = [],
-    array $options = []
+    array $options = [],
   ): Url {
     $url = parent::getRedirectUrl($route_parameters, $options);
     /** @var \Drupal\helfi_tunnistamo\Event\RedirectUrlEvent $urlEvent */
@@ -150,7 +150,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function buildConfigurationForm(
     array $form,
-    FormStateInterface $form_state
+    FormStateInterface $form_state,
   ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
 
