@@ -9,6 +9,7 @@ use Drupal\Core\EventSubscriber\HttpExceptionSubscriberBase;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\openid_connect\OpenIDConnectSession;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 
 /**
@@ -28,6 +29,7 @@ final class HttpExceptionSubscriber extends HttpExceptionSubscriberBase {
    */
   public function __construct(
     private EntityTypeManagerInterface $entityTypeManager,
+    #[Autowire(service: 'openid_connect.session')]
     private OpenIDConnectSession $session,
     private AccountProxyInterface $accountProxy,
   ) {

@@ -26,6 +26,15 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
   }
   $plugin->mapRoles($account, $context);
   $plugin->setUserPreferredAdminLanguage($account);
+
+  // Once user logs in with openid connect, set user password to null.
+  // This prevents the user from logging in with the local user in the
+  // future.
+  if ($account->getPassword()) {
+    $account
+      ->setPassword(NULL)
+      ->save();
+  }
 }
 
 /**

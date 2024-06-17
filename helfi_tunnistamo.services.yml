@@ -1,9 +1,11 @@
 services:
-  helfi_tunnistamo.http_exception_subscriber:
-    class: Drupal\helfi_tunnistamo\EventSubscriber\HttpExceptionSubscriber
-    arguments: ['@entity_type.manager', '@openid_connect.session', '@current_user']
-    tags:
-      - { name: event_subscriber }
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
   logger.channel.helfi_tunnistamo:
     parent: logger.channel_base
     arguments: [ 'helfi_tunnistamo' ]
+
+  Drupal\helfi_tunnistamo\EventSubscriber\HttpExceptionSubscriber: ~
+  Drupal\helfi_tunnistamo\EventSubscriber\DisableExternalUsersPasswordSubscriber: ~
