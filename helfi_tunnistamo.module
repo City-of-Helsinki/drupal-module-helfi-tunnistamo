@@ -54,6 +54,10 @@ function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_
   // to log in.
   $form['account']['mail']['#type'] = 'item';
   $form['account']['mail']['#markup'] = $account->getEmail();
+
+  // External users password cannot be changed.
+  $form['account']['pass']['#access'] = FALSE;
+  $form['account']['current_pass']['#access'] = FALSE;
 }
 
 /**
