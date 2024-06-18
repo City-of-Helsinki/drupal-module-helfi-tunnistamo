@@ -50,6 +50,10 @@ $config['openid_connect.client.tunnistamo']['settings']['environment_url'] = 'ht
 
 See https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/8283226135/Helfi-tunnistamo+moduuli for more information.
 
+## Preventing local user login
+
+Drupal account is created once a user has authenticated through the OpenID provider. The account cannot log without the OpenID authentication if its password is set to null. For additional safeguards, we set the password to null in [post deploy hook](https://github.com/City-of-Helsinki/drupal-module-helfi-api-base/blob/main/documentation/deploy-hooks.md) and during login.
+
 ## Contact
 
 Slack: #helfi-drupal (http://helsinkicity.slack.com/)

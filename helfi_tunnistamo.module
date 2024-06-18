@@ -26,6 +26,15 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
   }
   $plugin->mapRoles($account, $context);
   $plugin->setUserPreferredAdminLanguage($account);
+
+  // Once user logs in with openid connect, set user password to null.
+  // This prevents the user from logging in with the local user in the
+  // future.
+  if ($account->getPassword()) {
+    $account
+      ->setPassword(NULL)
+      ->save();
+  }
 }
 
 /**
@@ -45,6 +54,10 @@ function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_
   // to log in.
   $form['account']['mail']['#type'] = 'item';
   $form['account']['mail']['#markup'] = $account->getEmail();
+
+  // External users password cannot be changed.
+  $form['account']['pass']['#access'] = FALSE;
+  $form['account']['current_pass']['#access'] = FALSE;
 }
 
 /**
