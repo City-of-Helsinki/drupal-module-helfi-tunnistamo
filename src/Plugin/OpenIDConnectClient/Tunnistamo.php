@@ -193,6 +193,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       $roleOptions[$role->id()] = $role->label();
     }
 
+    $form['ad_roles_disabled_amr'] = [
+      '#type' => 'markup',
+      '#markup' => $this->t('Disable AD role mapping for AMR. This must be done code. See README.md for more information'),
+    ];
+
     $form['ad_roles'] = [
       '#type' => 'markup',
       '#markup' => $this->t('Map AD role to Drupal role. This must be done code. See README.md for more information'),
@@ -221,6 +226,16 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
+   * Gets AMRs where ad role mapping is disabled.
+   *
+   * @return array
+   *   The AMR list.
+   */
+  public function getDisabledAMRs() : array {
+    return array_filter($this->configuration['ad_roles_disabled_amr'] ?? []);
+  }
+
+  /**
    * Grant given roles to user.
    *
    * @param \Drupal\user\UserInterface $account
@@ -234,6 +249,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
         $account->id(),
         implode(',', $context['userinfo']['ad_groups'] ?? []),
       ]));
+    }
+
+    // Skip role mapping for configured authentication methods.
+    if (array_intersect($context['userinfo']['amr'] ?? [], $this->getDisabledAMRs())) {
+      return;
     }
 
     // User groups has values when authenticated through Helsinki/Espoo AD,
