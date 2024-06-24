@@ -50,15 +50,10 @@ function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_
   if (!Drupal::service('externalauth.authmap')->getAll($account->id())) {
     return;
   }
-
-  // Quick and dirty hack to enable admins to temporarily edit users emails.
-  // See: UHF-10169.
-  if (!array_intersect(['admin', 'super_administrator'], \Drupal::currentUser()->getRoles())) {
-    // Prevent users from changing the email if they have used openid_connect
-    // to log in.
-    $form['account']['mail']['#type'] = 'item';
-    $form['account']['mail']['#markup'] = $account->getEmail();
-  }
+  // Prevent users from changing the email if they have used openid_connect
+  // to log in.
+  $form['account']['mail']['#type'] = 'item';
+  $form['account']['mail']['#markup'] = $account->getEmail();
 
   // External users password cannot be changed.
   $form['account']['pass']['#access'] = FALSE;
