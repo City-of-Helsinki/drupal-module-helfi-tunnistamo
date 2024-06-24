@@ -28,6 +28,13 @@ class RoleMapTest extends KernelTestBase {
     // Create a new role and tell our plugin to map the role.
     $role = $this->createRole([], 'test');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
+    $this->setPluginConfiguration('ad_roles_disabled_amr', ['something']);
+
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => [], 'amr' => ['something']]]);
+    // Our account should not have the newly added role now, amr is disabled.
+    $this->assertEquals([
+      AccountInterface::AUTHENTICATED_ROLE,
+    ], $account->getRoles());
 
     $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => []]]);
     // Our account should have the newly added role now.
