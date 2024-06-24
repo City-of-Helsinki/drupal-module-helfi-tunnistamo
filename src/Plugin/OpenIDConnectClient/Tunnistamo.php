@@ -231,7 +231,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    * @return array
    *   The AMR list.
    */
-  public function getDisabledAMRs() : array {
+  public function getDisabledAmr() : array {
     return array_filter($this->configuration['ad_roles_disabled_amr'] ?? []);
   }
 
@@ -252,7 +252,7 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     }
 
     // Skip role mapping for configured authentication methods.
-    if (array_intersect($context['userinfo']['amr'] ?? [], $this->getDisabledAMRs())) {
+    if (array_intersect($context['userinfo']['amr'] ?? [], $this->getDisabledAmr())) {
       return;
     }
 
