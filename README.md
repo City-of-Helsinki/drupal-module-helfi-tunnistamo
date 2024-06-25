@@ -36,6 +36,12 @@ $config['openid_connect.client.azure-ad']['settings']['ad_roles'] = [
 ];
 ```
 
+Disable role mapping for some AMRs. With this setting, OpenID users keep their manually assigned roles.
+
+```php
+$config['openid_connect.client.azure-ad']['settings']['ad_roles_disabled_amr'] = ['eduad'];
+```
+
 ## Local development
 
 Add something like this to your `local.settings.php` file:
