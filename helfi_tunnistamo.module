@@ -41,7 +41,7 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
  * Implements hook_form_FORM_ID_alter().
  */
 function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_state, $form_id) : void {
-  $mail = $form['account']['mail']['#default_value'] ?? NULL;
+  $mail = $form['account']['mail']['#default_value'] ?? '';
 
   if (!$account = user_load_by_mail($mail)) {
     return;
