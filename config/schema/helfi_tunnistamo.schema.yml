@@ -45,6 +45,3 @@ openid_connect.client.plugin.tunnistamo:
             type: sequence
             sequence:
               type: string
-    debug_log:
-      type: boolean
-      label: 'Log ad groups for debugging'

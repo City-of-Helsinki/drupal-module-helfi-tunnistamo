@@ -3,9 +3,5 @@ services:
     autowire: true
     autoconfigure: true
 
-  logger.channel.helfi_tunnistamo:
-    parent: logger.channel_base
-    arguments: [ 'helfi_tunnistamo' ]
-
   Drupal\helfi_tunnistamo\EventSubscriber\HttpExceptionSubscriber: ~
   Drupal\helfi_tunnistamo\EventSubscriber\DisableExternalUsersPasswordSubscriber: ~
