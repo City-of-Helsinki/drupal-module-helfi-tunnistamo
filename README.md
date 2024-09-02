@@ -42,6 +42,19 @@ Disable role mapping for some AMRs. With this setting, OpenID users keep their m
 $config['openid_connect.client.azure-ad']['settings']['ad_roles_disabled_amr'] = ['eduad'];
 ```
 
+## Map level of assurance to a Drupal role
+
+The `loa` field in an OAuth token typically stands for "Level of Assurance." It is used to indicate the degree of confidence in the authentication process that was used to issue the token. The Level of Assurance reflects how certain the identity provider (IDP) is that the user is who they claim to be.
+
+```php
+$config['openid_connect.client.client`]['settings']['loa_roles'] = [
+  [
+    'loa' => 'substancial',
+    'roles' => ['has_strong_auth_rol'],
+  ],
+];
+```
+
 ## Local development
 
 Add something like this to your `local.settings.php` file:
