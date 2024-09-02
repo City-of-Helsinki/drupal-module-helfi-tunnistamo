@@ -14,4 +14,6 @@ settings:
   auto_login: 0
   client_roles: []
   ad_roles: []
+  loa_roles: []
+  loa_no_match_roles: []
   environment_url: ''

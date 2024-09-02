@@ -178,6 +178,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#markup' => $this->t('Disable AD role mapping for AMR. This must be done code. See README.md for more information'),
     ];
 
+    $form['loa_roles'] = [
+      '#type' => 'markup',
+      '#markup' => $this->t('Map Level of Assurance to Drupal role. This must be done code. See README.md for more information'),
+    ];
+
     $form['ad_roles'] = [
       '#type' => 'markup',
       '#markup' => $this->t('Map AD role to Drupal role. This must be done code. See README.md for more information'),
@@ -206,6 +211,26 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
+   * Gets loa roles mapping.
+   *
+   * @return array
+   *   The loa to Drupal role map.
+   */
+  public function getLoaRoles() : array {
+    return array_filter($this->configuration['loa_roles'] ?? []);
+  }
+
+  /**
+   * Gets loa no match roles.
+   *
+   * @return string[]
+   *   The loa no match Drupal roles.
+   */
+  public function getLoaNoMatchRoles() : array {
+    return array_filter($this->configuration['loa_no_match_roles'] ?? []);
+  }
+
+  /**
    * Gets AMRs where ad role mapping is disabled.
    *
    * @return array
@@ -231,8 +256,9 @@ final class Tunnistamo extends OpenIDConnectClientBase {
 
     $roles = $this->getClientRoles();
     $adRoles = $this->getAdRoles();
+    $loaRoles = $this->getLoaRoles();
 
-    if (!$roles && !$adRoles) {
+    if (!$roles && !$adRoles && !$loaRoles) {
       return;
     }
 
@@ -242,17 +268,12 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       $account->getRoles(FALSE)
     );
 
-    if ($adRoles && !empty($context['userinfo']['ad_groups'])) {
-      foreach ($adRoles as $map) {
-        ['ad_role' => $adRole, 'roles' => $drupalRoles] = $map;
+    foreach ($this->mapAdRoles($context) as $role) {
+      $roles[] = $role;
+    }
 
-        if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
-          continue;
-        }
-        foreach ($drupalRoles as $value) {
-          $roles[] = $value;
-        }
-      }
+    foreach ($this->mapLoaRoles($context) as $role) {
+      $roles[] = $role;
     }
 
     foreach ($roles as $rid) {
@@ -268,6 +289,70 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     }
 
     $account->save();
+  }
+
+  /**
+   * Maps ad groups to drupal roles.
+   *
+   * @param array $context
+   *   The context.
+   *
+   * @return string[]
+   *   Drupal role ids.
+   */
+  private function mapAdRoles(array $context) : array {
+    $adRoles = $this->getAdRoles();
+    $roles = [];
+
+    if ($adRoles && !empty($context['userinfo']['ad_groups'])) {
+      foreach ($adRoles as $map) {
+        ['ad_role' => $adRole, 'roles' => $drupalRoles] = $map;
+
+        if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
+          continue;
+        }
+        foreach ($drupalRoles as $value) {
+          $roles[] = $value;
+        }
+      }
+    }
+
+    return $roles;
+  }
+
+  /**
+   * Maps context userinfo to drupal roles.
+   *
+   * @param array $context
+   *   The context.
+   *
+   * @return string[]
+   *   Drupal role ids.
+   */
+  private function mapLoaRoles(array $context) : array {
+    $roles = [];
+    $loaRoles = $this->getLoaRoles();
+
+    if (!$loaRoles || empty($context['userinfo']['loa'])) {
+      return [];
+    }
+
+    foreach ($loaRoles as $map) {
+      ['loa' => $loa, 'roles' => $drupalRoles] = $map;
+
+      if ($loa !== $context['userinfo']['loa']) {
+        continue;
+      }
+      foreach ($drupalRoles as $value) {
+        $roles[] = $value;
+      }
+    }
+
+    if (!$roles) {
+      return $this->getLoaNoMatchRoles();
+    }
+
+    return $roles;
   }
 
   /**
