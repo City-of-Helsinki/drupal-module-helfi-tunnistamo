@@ -71,15 +71,6 @@ class RoleMapTest extends KernelTestBase {
     ], $account->getRoles());
 
     $role2 = $this->createRole([], 'test2');
-    $this->setPluginConfiguration('loa_no_match_roles', [$role2]);
-    $this->getPlugin()->mapRoles($account, ['userinfo' => ['loa' => 'weak']]);
-
-    // Make sure loa_no_match_roles are assigned if userinfo loa is not mapped.
-    $this->assertEquals([
-      AccountInterface::AUTHENTICATED_ROLE,
-      $role2,
-    ], $account->getRoles());
-
     $role3 = $this->createRole([], 'test3');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
     $this->setPluginConfiguration('ad_roles', [

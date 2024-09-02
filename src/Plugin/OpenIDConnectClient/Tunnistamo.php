@@ -221,16 +221,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
-   * Gets loa no match roles.
-   *
-   * @return string[]
-   *   The loa no match Drupal roles.
-   */
-  public function getLoaNoMatchRoles() : array {
-    return array_filter($this->configuration['loa_no_match_roles'] ?? []);
-  }
-
-  /**
    * Gets AMRs where ad role mapping is disabled.
    *
    * @return array
@@ -330,8 +320,8 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *   Drupal role ids.
    */
   private function mapLoaRoles(array $context) : array {
-    $roles = [];
     $loaRoles = $this->getLoaRoles();
+    $roles = [];
 
     if (!$loaRoles || empty($context['userinfo']['loa'])) {
       return [];
@@ -346,10 +336,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       foreach ($drupalRoles as $value) {
         $roles[] = $value;
       }
-    }
-
-    if (!$roles) {
-      return $this->getLoaNoMatchRoles();
     }
 
     return $roles;
