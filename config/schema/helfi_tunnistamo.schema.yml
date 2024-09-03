@@ -33,6 +33,18 @@ openid_connect.client.plugin.tunnistamo:
       label: 'AMRs where ad role mapping is disabled'
       sequence:
         type: string
+    loa_roles:
+      label: 'Level of Assurance roles to automatically map to user using this client'
+      type: sequence
+      sequence:
+        type: mapping
+        mapping:
+          loa:
+            type: string
+          roles:
+            type: sequence
+            sequence:
+              type: string
     ad_roles:
       type: sequence
       label: 'AD roles to automatically map to user using this client'
@@ -45,6 +57,3 @@ openid_connect.client.plugin.tunnistamo:
             type: sequence
             sequence:
               type: string
-    debug_log:
-      type: boolean
-      label: 'Log ad groups for debugging'

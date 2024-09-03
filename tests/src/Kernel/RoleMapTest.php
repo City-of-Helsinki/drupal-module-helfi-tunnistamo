@@ -6,9 +6,6 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Tests\user\Traits\UserCreationTrait;
-use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
-use Psr\Log\LoggerInterface;
 
 /**
  * Tests Tunnistamo role map functionality.
@@ -18,7 +15,6 @@ use Psr\Log\LoggerInterface;
 class RoleMapTest extends KernelTestBase {
 
   use UserCreationTrait;
-  use ProphecyTrait;
 
   /**
    * Tests that roles are mapped accordingly.
@@ -30,13 +26,13 @@ class RoleMapTest extends KernelTestBase {
     $this->setPluginConfiguration('client_roles', [$role => $role]);
     $this->setPluginConfiguration('ad_roles_disabled_amr', ['something']);
 
-    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => [], 'amr' => ['something']]]);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => [], 'amr' => ['something'], 'loa' => 'weak']]);
     // Our account should not have the newly added role now, amr is disabled.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
     ], $account->getRoles());
 
-    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => []]]);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => [], 'loa' => 'weak']]);
     // Our account should have the newly added role now.
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
@@ -47,14 +43,6 @@ class RoleMapTest extends KernelTestBase {
       AccountInterface::AUTHENTICATED_ROLE => AccountInterface::AUTHENTICATED_ROLE,
     ]);
 
-    $this->getPlugin()->mapRoles($account, []);
-
-    // Make sure our custom role is not removed since ad_groups was not set.
-    $this->assertEquals([
-      AccountInterface::AUTHENTICATED_ROLE,
-      $role,
-    ], $account->getRoles());
-
     $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => []]]);
 
     // Make sure our custom role is removed.
@@ -62,7 +50,28 @@ class RoleMapTest extends KernelTestBase {
       AccountInterface::AUTHENTICATED_ROLE,
     ], $account->getRoles());
 
+    $this->getPlugin()->mapRoles($account, []);
+
+    // Custom roles are removed since ad_groups was not set.
+    $this->assertEquals([
+      AccountInterface::AUTHENTICATED_ROLE,
+    ], $account->getRoles());
+
+    // Tests Level of Assurance mapping.
+    $this->setPluginConfiguration('loa_roles', [
+      [
+        'loa' => 'substantial',
+        'roles' => [$role],
+      ],
+    ]);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['loa' => 'substantial']]);
+    $this->assertEquals([
+      AccountInterface::AUTHENTICATED_ROLE,
+      $role,
+    ], $account->getRoles());
+
     $role2 = $this->createRole([], 'test2');
+    $role3 = $this->createRole([], 'test3');
     $this->setPluginConfiguration('client_roles', [$role => $role]);
     $this->setPluginConfiguration('ad_roles', [
       [
@@ -75,25 +84,20 @@ class RoleMapTest extends KernelTestBase {
         'roles' => [$role2],
       ],
     ]);
-    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['ad_role']]]);
+    $this->setPluginConfiguration('loa_roles', [
+      [
+        'loa' => 'substantial',
+        'roles' => [$role3],
+      ],
+    ]);
+    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['ad_role'], 'loa' => 'substantial']]);
     $this->assertEquals([
       AccountInterface::AUTHENTICATED_ROLE,
       $role,
       $role2,
+      $role3,
     ], $account->getRoles());
-  }
 
-  /**
-   * Tests group debug logging.
-   */
-  public function testDebugLogging() : void {
-    $account = $this->createUser();
-    $logger = $this->prophesize(LoggerInterface::class);
-    $logger->info(Argument::containingString('test_group'))
-      ->shouldBeCalled();
-    $this->container->set('logger.channel.helfi_tunnistamo', $logger->reveal());
-    $this->setPluginConfiguration('debug_log', TRUE);
-    $this->getPlugin()->mapRoles($account, ['userinfo' => ['ad_groups' => ['test_group']]]);
   }
 
 }

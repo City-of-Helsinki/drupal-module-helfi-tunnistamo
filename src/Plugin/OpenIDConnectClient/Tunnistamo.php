@@ -11,7 +11,6 @@ use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\UserInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -33,13 +32,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   private EventDispatcherInterface $eventDispatcher;
 
   /**
-   * The logger.
-   *
-   * @var \Psr\Log\LoggerInterface
-   */
-  private LoggerInterface $logger;
-
-  /**
    * {@inheritdoc}
    */
   public static function create(
@@ -50,7 +42,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   ) : self {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->eventDispatcher = $container->get('event_dispatcher');
-    $instance->logger = $container->get('logger.channel.helfi_tunnistamo');
     return $instance;
   }
 
@@ -63,7 +54,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       'environment_url' => '',
       'auto_login' => FALSE,
       'client_roles' => [],
-      'debug_log' => FALSE,
     ] + parent::defaultConfiguration();
   }
 
@@ -82,16 +72,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function autoLogin(): bool {
     return (bool) $this->configuration['auto_login'];
-  }
-
-  /**
-   * Whether 'debug_log' setting is enabled or not.
-   *
-   * @return bool
-   *   TRUE if we should debug log.
-   */
-  private function isDebugLogEnabled(): bool {
-    return (bool) $this->configuration['debug_log'];
   }
 
   /**
@@ -198,6 +178,11 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       '#markup' => $this->t('Disable AD role mapping for AMR. This must be done code. See README.md for more information'),
     ];
 
+    $form['loa_roles'] = [
+      '#type' => 'markup',
+      '#markup' => $this->t('Map Level of Assurance to Drupal role. This must be done code. See README.md for more information'),
+    ];
+
     $form['ad_roles'] = [
       '#type' => 'markup',
       '#markup' => $this->t('Map AD role to Drupal role. This must be done code. See README.md for more information'),
@@ -226,6 +211,16 @@ final class Tunnistamo extends OpenIDConnectClientBase {
   }
 
   /**
+   * Gets loa roles mapping.
+   *
+   * @return array
+   *   The loa to Drupal role map.
+   */
+  public function getLoaRoles() : array {
+    return array_filter($this->configuration['loa_roles'] ?? []);
+  }
+
+  /**
    * Gets AMRs where ad role mapping is disabled.
    *
    * @return array
@@ -244,29 +239,16 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    *   The context.
    */
   public function mapRoles(UserInterface $account, array $context) : void {
-    if ($this->isDebugLogEnabled()) {
-      $this->logger->info(vsprintf('ad groups for uid %s: %s', [
-        $account->id(),
-        implode(',', $context['userinfo']['ad_groups'] ?? []),
-      ]));
-    }
-
     // Skip role mapping for configured authentication methods.
     if (array_intersect($context['userinfo']['amr'] ?? [], $this->getDisabledAmr())) {
       return;
     }
 
-    // User groups has values when authenticated through Helsinki/Espoo AD,
-    // otherwise the variable is empty. Do not modify manually assigned roles
-    // if ad_groups variable is not set.
-    if (!isset($context['userinfo']['ad_groups'])) {
-      return;
-    }
-
     $roles = $this->getClientRoles();
     $adRoles = $this->getAdRoles();
+    $loaRoles = $this->getLoaRoles();
 
-    if (!$roles && !$adRoles) {
+    if (!$roles && !$adRoles && !$loaRoles) {
       return;
     }
 
@@ -276,17 +258,12 @@ final class Tunnistamo extends OpenIDConnectClientBase {
       $account->getRoles(FALSE)
     );
 
-    if ($adRoles && !empty($context['userinfo']['ad_groups'])) {
-      foreach ($adRoles as $map) {
-        ['ad_role' => $adRole, 'roles' => $drupalRoles] = $map;
+    foreach ($this->mapAdRoles($context) as $role) {
+      $roles[] = $role;
+    }
 
-        if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
-          continue;
-        }
-        foreach ($drupalRoles as $value) {
-          $roles[] = $value;
-        }
-      }
+    foreach ($this->mapLoaRoles($context) as $role) {
+      $roles[] = $role;
     }
 
     foreach ($roles as $rid) {
@@ -302,6 +279,66 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     }
 
     $account->save();
+  }
+
+  /**
+   * Maps ad groups to drupal roles.
+   *
+   * @param array $context
+   *   The context.
+   *
+   * @return string[]
+   *   Drupal role ids.
+   */
+  private function mapAdRoles(array $context) : array {
+    $adRoles = $this->getAdRoles();
+    $roles = [];
+
+    if ($adRoles && !empty($context['userinfo']['ad_groups'])) {
+      foreach ($adRoles as $map) {
+        ['ad_role' => $adRole, 'roles' => $drupalRoles] = $map;
+
+        if (!in_array($adRole, $context['userinfo']['ad_groups'])) {
+          continue;
+        }
+        foreach ($drupalRoles as $value) {
+          $roles[] = $value;
+        }
+      }
+    }
+
+    return $roles;
+  }
+
+  /**
+   * Maps context userinfo to drupal roles.
+   *
+   * @param array $context
+   *   The context.
+   *
+   * @return string[]
+   *   Drupal role ids.
+   */
+  private function mapLoaRoles(array $context) : array {
+    $loaRoles = $this->getLoaRoles();
+    $roles = [];
+
+    if (!$loaRoles || empty($context['userinfo']['loa'])) {
+      return [];
+    }
+
+    foreach ($loaRoles as $map) {
+      ['loa' => $loa, 'roles' => $drupalRoles] = $map;
+
+      if ($loa !== $context['userinfo']['loa']) {
+        continue;
+      }
+      foreach ($drupalRoles as $value) {
+        $roles[] = $value;
+      }
+    }
+
+    return $roles;
   }
 
   /**

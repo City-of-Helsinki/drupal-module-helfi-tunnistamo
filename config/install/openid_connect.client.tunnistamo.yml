@@ -14,5 +14,5 @@ settings:
   auto_login: 0
   client_roles: []
   ad_roles: []
+  loa_roles: []
   environment_url: ''
-  debug_log: false
