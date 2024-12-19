@@ -55,6 +55,7 @@ class UserExpireTest extends KernelTestBase {
       $this->assertTrue($user->getCreatedTime() > 0);
       // Set access time over the threshold.
       $user->setLastAccessTime(strtotime('-7 months'))
+        ->setChangedTime(strtotime('-2 days'))
         ->save();
     }
     // Make sure both users are marked as expired.
