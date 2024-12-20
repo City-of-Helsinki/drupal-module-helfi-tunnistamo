@@ -20,6 +20,8 @@ function helfi_tunnistamo_install() : void {
     ->set('user_login_display', 'below')
     // Logout from openid connect provider by default.
     ->set('end_session_enabled', TRUE)
+    // Do not map roles in openid_connect module.
+    ->set('role_mappings', [])
     ->save();
 }
 
@@ -58,4 +60,18 @@ function helfi_tunnistamo_update_9003() : void {
     $account->setEmail(helfi_tunnistamo_create_email(['sub' => $sub]))
       ->save();
   }
+}
+
+/**
+ * UHF-X: Remove all openid_connect role mappings.
+ *
+ * Tunnistamo module has its own role mapping.
+ *
+ * @see \Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo::mapRoles()
+ */
+function helfi_tunnistamo_update_9004() : void {
+  \Drupal::configFactory()
+    ->getEditable('openid_connect.settings')
+    ->set('role_mappings', [])
+    ->save();
 }
