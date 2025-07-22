@@ -58,23 +58,28 @@ class UserExpireTest extends KernelTestBase {
         ->setChangedTime(strtotime('-2 days'))
         ->save();
     }
-    // Make sure both users are marked as expired.
-    $expired = $this->getSut()->getExpiredUserIds();
-    $this->assertEquals([1 => 1, 2 => 2], $expired);
-
     /** @var \Drupal\externalauth\ExternalAuthInterface $externalAuth */
     $externalAuth = $this->container->get('externalauth.externalauth');
     $externalAuth->linkExistingAccount('123', 'openid_connect.tunnistamo', $users['2']);
 
     // Make sure user 2 is not marked as expired after logging in using
     // Tunnistamo.
-    $expired = $this->getSut()->getExpiredUserIds();
-    $this->assertArrayNotHasKey(2, $expired);
-
     $this->getSut()->cancelExpiredUsers();
 
     $this->assertTrue(User::load(1)->isBlocked());
     $this->assertFalse(User::load(2)->isBlocked());
+
+    foreach ([1, 2] as $uid) {
+      User::load($uid)->setLastAccessTime(strtotime('-5 years 1 day'))
+        ->setChangedTime(strtotime('-2 days'))
+        // Make sure user is blocked, otherwise they won't get deleted.
+        ->block()
+        ->save();
+    }
+    $this->getSut()->deleteExpiredUsers();
+    $this->assertNull(User::load(1));
+    // Make sure Tunnistamo users are deleted as well.
+    $this->assertNotNull(User::load(2));
   }
 
 }
