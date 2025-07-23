@@ -5,3 +5,4 @@ services:
 
   Drupal\helfi_tunnistamo\EventSubscriber\HttpExceptionSubscriber: ~
   Drupal\helfi_tunnistamo\EventSubscriber\DisableExternalUsersPasswordSubscriber: ~
+  Drupal\helfi_tunnistamo\Session\Configuration: ~
