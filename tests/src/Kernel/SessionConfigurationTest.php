@@ -6,7 +6,6 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Core\Session\SessionConfigurationInterface;
 use Drupal\helfi_tunnistamo\Session\Configuration;
-use Drupal\KernelTests\KernelTestBase;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -22,13 +21,6 @@ class SessionConfigurationTest extends KernelTestBase {
    * @var \Symfony\Component\HttpFoundation\RequestStack|null
    */
   protected ?RequestStack $requestStack;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected static $modules = [
-    'helfi_tunnistamo',
-  ];
 
   /**
    * {@inheritdoc}

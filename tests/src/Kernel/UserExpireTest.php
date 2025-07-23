@@ -72,8 +72,6 @@ class UserExpireTest extends KernelTestBase {
     foreach ([1, 2] as $uid) {
       User::load($uid)->setLastAccessTime(strtotime('-5 years 1 day'))
         ->setChangedTime(strtotime('-2 days'))
-        // Make sure user is blocked, otherwise they won't get deleted.
-        ->block()
         ->save();
     }
     $this->getSut()->deleteExpiredUsers();
