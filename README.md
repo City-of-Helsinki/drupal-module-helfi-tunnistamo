@@ -13,6 +13,10 @@ Contact the Helsinki Profiili team for client credentials. Make sure only AD aut
 
 The redirect URL should be `https://example.com/openid-connect/tunnistamo` when using the default configuration.
 
+## Session / Cookie lifetime
+
+This module overrides the `session.storage.options.cookie_lifetime` service parameter. As a result, all sessions will expire after 36 hours.
+
 ## Configuration
 
 Populate the following environment variables:

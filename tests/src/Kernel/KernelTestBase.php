@@ -41,6 +41,7 @@ abstract class KernelTestBase extends CoreKernelTestBase {
 
     $this->installConfig('helfi_tunnistamo');
     $this->installEntitySchema('action');
+    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('user');
     $this->installSchema('externalauth', ['authmap']);
 

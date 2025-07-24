@@ -8,6 +8,7 @@ use Drupal\openid_connect\OpenIDConnect;
 use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientInterface;
 use Drupal\user\Entity\User;
+use Drupal\user\UserInterface;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 
@@ -19,16 +20,6 @@ use Prophecy\PhpUnit\ProphecyTrait;
 class UserInfoAlterTest extends KernelTestBase {
 
   use ProphecyTrait;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp() : void {
-    parent::setUp();
-
-    $this->installSchema('user', ['users_data']);
-    $this->installConfig('user');
-  }
 
   /**
    * Gets the client mock.
@@ -66,6 +57,10 @@ class UserInfoAlterTest extends KernelTestBase {
    * @dataProvider authorizationData
    */
   public function testAuthorization(array $userInfo, string $expectedEmail, string $expectedUsername) : void {
+    $this->config('user.settings')
+      ->set('register', UserInterface::REGISTER_VISITORS)
+      ->save();
+
     $status = $this->openIdConnect()
       ->completeAuthorization($this->getClientMock($userInfo), [
         'access_token' => '123',
