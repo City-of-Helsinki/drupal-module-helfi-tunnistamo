@@ -6,8 +6,6 @@ namespace Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\Core\Url;
-use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\UserInterface;
@@ -72,23 +70,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function autoLogin(): bool {
     return (bool) $this->configuration['auto_login'];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getRedirectUrl(
-    array $route_parameters = [],
-    array $options = [],
-  ): Url {
-    $url = parent::getRedirectUrl($route_parameters, $options);
-    /** @var \Drupal\helfi_tunnistamo\Event\RedirectUrlEvent $urlEvent */
-    $urlEvent = $this->eventDispatcher->dispatch(new RedirectUrlEvent(
-      $url,
-      $this->requestStack->getCurrentRequest(),
-      $this
-    ));
-    return $urlEvent->getRedirectUrl();
   }
 
   /**
