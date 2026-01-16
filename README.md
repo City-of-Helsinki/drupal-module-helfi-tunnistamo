@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/City-of-Helsinki/drupal-module-helfi-tunnistamo/workflows/CI/badge.svg) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=City-of-Helsinki_drupal-module-helfi-tunnistamo&metric=coverage)](https://sonarcloud.io/summary/new_code?id=City-of-Helsinki_drupal-module-helfi-tunnistamo)
 
-Provides an integration to [City-of-Helsinki/tunnistamo](https://github.com/City-of-Helsinki/tunnistamo) OpenID Connect (OIDC) service.
+Provides an integration to Helsinki-Profiili OpenID Connect (OIDC) service.
 
 ## Usage
 
