@@ -9,6 +9,7 @@ use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientInterface;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 
@@ -53,9 +54,8 @@ class UserInfoAlterTest extends KernelTestBase {
 
   /**
    * Tests authorization email and username fallback.
-   *
-   * @dataProvider authorizationData
    */
+  #[DataProvider(methodName: 'authorizationData')]
   public function testAuthorization(array $userInfo, string $expectedEmail, string $expectedUsername) : void {
     $this->config('user.settings')
       ->set('register', UserInterface::REGISTER_VISITORS)
@@ -81,7 +81,7 @@ class UserInfoAlterTest extends KernelTestBase {
    * @return array[]
    *   The data.
    */
-  public function authorizationData() : array {
+  public static function authorizationData() : array {
     return [
       // Make sure authorization succeeds, and a random email address is
       // generated when a user has no email.
