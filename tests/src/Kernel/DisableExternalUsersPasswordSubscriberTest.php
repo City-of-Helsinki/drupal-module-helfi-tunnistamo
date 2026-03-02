@@ -7,12 +7,14 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 use Drupal\helfi_api_base\Event\PostDeployEvent;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\Entity\User;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests disable local users subscriber.
- *
- * @group helfi_tunnistamo
  */
+#[Group('helfi_tunnistamo')]
+#[RunTestsInSeparateProcesses]
 class DisableExternalUsersPasswordSubscriberTest extends KernelTestBase {
 
   use UserCreationTrait;

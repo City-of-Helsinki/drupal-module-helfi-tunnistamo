@@ -10,11 +10,15 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\helfi_tunnistamo\Drush\Commands\SanitizeCommand;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\UserInterface;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
  * Kernel tests for sanitization command.
  */
+#[Group('helfi_tunnistamo')]
+#[RunTestsInSeparateProcesses]
 class SanitizationCommandTest extends KernelTestBase {
 
   use UserCreationTrait;
