@@ -6,14 +6,16 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Core\Render\HtmlResponse;
 use Drupal\Core\Routing\TrustedRedirectResponse;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Tests http exception subscriber.
- *
- * @group helfi_tunnistamo
  */
+#[Group('helfi_tunnistamo')]
+#[RunTestsInSeparateProcesses]
 class HttpExceptionSubscriberTest extends KernelTestBase {
 
   /**

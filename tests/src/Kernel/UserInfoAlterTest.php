@@ -9,14 +9,16 @@ use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
 use Drupal\openid_connect\Plugin\OpenIDConnectClientInterface;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 
 /**
  * Tests user_info_alter hooks.
- *
- * @group helfi_tunnistamo
  */
+#[Group('helfi_tunnistamo')]
+#[RunTestsInSeparateProcesses]
 class UserInfoAlterTest extends KernelTestBase {
 
   use ProphecyTrait;

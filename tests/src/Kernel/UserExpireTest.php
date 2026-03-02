@@ -8,12 +8,14 @@ use Drupal\helfi_api_base\Features\FeatureManager;
 use Drupal\helfi_api_base\UserExpire\UserExpireManager;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\Entity\User;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests API Base's user expiration feature with Tunnistamo.
- *
- * @group helfi_tunnistamo
  */
+#[Group('helfi_tunnistamo')]
+#[RunTestsInSeparateProcesses]
 class UserExpireTest extends KernelTestBase {
 
   use UserCreationTrait;
@@ -27,6 +29,10 @@ class UserExpireTest extends KernelTestBase {
     /** @var \Drupal\helfi_api_base\Features\FeatureManager $featureManager */
     $featureManager = $this->container->get(FeatureManager::class);
     $featureManager->enableFeature(FeatureManager::USER_EXPIRE);
+
+    // User id 1 is handled separately. Create a
+    // dummy user so the next user is 2.
+    $this->createUser();
   }
 
   /**

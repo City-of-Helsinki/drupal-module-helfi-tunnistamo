@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Core\Form\FormState;
+use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\user\Entity\Role;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests Tunnistamo configuration.
- *
- * @coversDefaultClass \Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo
- * @group helfi_tunnistamo
  */
+#[Group('helfi_tunnistamo')]
+#[RunTestsInSeparateProcesses]
+#[CoversClass(Tunnistamo::class)]
 class TunnistamoClientTest extends KernelTestBase {
 
   /**
