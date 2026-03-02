@@ -21,8 +21,6 @@ class TunnistamoClientTest extends KernelTestBase {
 
   /**
    * Make sure the correct scopes are returned.
-   *
-   * @covers ::getClientScopes
    */
   public function testGetClientScopes() : void {
     $plugin = $this->getPlugin();
@@ -34,11 +32,6 @@ class TunnistamoClientTest extends KernelTestBase {
 
   /**
    * Make sure Tunnistamo is enabled by default.
-   *
-   * @covers ::getConfiguration
-   * @covers ::defaultConfiguration
-   * @covers ::create
-   * @covers ::setConfiguration
    */
   public function testEnable() : void {
     $config = $this->getPlugin()
