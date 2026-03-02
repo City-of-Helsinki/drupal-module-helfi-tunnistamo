@@ -25,7 +25,7 @@ final readonly class MenuHooks {
    */
   #[Hook('menu_local_tasks_alter')]
   public function alterMenu(&$data, $route_name, RefinableCacheableDependencyInterface &$cacheability): void {
-    if ($route_name !== 'entity.user.canonical') {
+    if (!in_array($route_name, ['entity.user.canonical', 'entity.user.edit_form'])) {
       return;
     }
 
