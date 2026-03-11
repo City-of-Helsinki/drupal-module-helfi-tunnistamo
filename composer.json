@@ -11,5 +11,12 @@
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
         "drupal/coder": "^8.3"
+    },
+    "extra": {
+        "patches": {
+            "drupal/openid_connect": {
+                "Fix logout button for Drupal Test Traits": "./public/modules/contrib/helfi_tunnistamo/patches/3577169.patch"
+            }
+        }
     }
 }
