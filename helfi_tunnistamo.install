@@ -94,7 +94,6 @@ function helfi_tunnistamo_update_9005() : void {
     $configuration = \Drupal::configFactory()
       ->getEditable('openid_connect.client.' . $client->id());
 
-
     $settings = $configuration->get('settings');
 
     // Openid connect has its auto login functionality now, and
