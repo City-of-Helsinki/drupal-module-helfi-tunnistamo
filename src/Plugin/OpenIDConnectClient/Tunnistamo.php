@@ -52,7 +52,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     return [
       'client_scopes' => 'openid,email',
       'environment_url' => '',
-      'auto_login' => FALSE,
       'client_roles' => [],
     ] + parent::defaultConfiguration();
   }
@@ -62,16 +61,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
    */
   public function setConfiguration(array $configuration) : void {
     $this->configuration = array_merge($this->defaultConfiguration(), $configuration);
-  }
-
-  /**
-   * Whether 'auto_login' setting is enabled or not.
-   *
-   * @return bool
-   *   TRUE if we should auto login.
-   */
-  public function autoLogin(): bool {
-    return (bool) $this->configuration['auto_login'];
   }
 
   /**
@@ -133,12 +122,6 @@ final class Tunnistamo extends OpenIDConnectClientBase {
     FormStateInterface $form_state,
   ): array {
     $form = parent::buildConfigurationForm($form, $form_state);
-
-    $form['auto_login'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Auto login on 403 pages'),
-      '#default_value' => $this->configuration['auto_login'],
-    ];
 
     $form['client_scopes'] = [
       '#type' => 'textfield',

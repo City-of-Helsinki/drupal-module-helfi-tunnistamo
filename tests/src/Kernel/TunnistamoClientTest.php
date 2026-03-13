@@ -38,7 +38,6 @@ class TunnistamoClientTest extends KernelTestBase {
       ->getConfiguration();
     $this->assertEquals('placeholder', $config['client_id']);
     $this->assertEquals('placeholder', $config['client_secret']);
-    $this->assertEquals(0, $config['auto_login']);
     $this->assertEquals([], $config['client_roles']);
     $this->assertEquals('', $config['environment_url']);
   }
@@ -85,7 +84,6 @@ class TunnistamoClientTest extends KernelTestBase {
     $plugin = $this->getPlugin();
     $configuration = $plugin->getConfiguration();
     $form = $plugin->buildConfigurationForm([], new FormState());
-    $this->assertEquals($configuration['auto_login'], $form['auto_login']['#default_value']);
     $this->assertEquals($configuration['client_scopes'], $form['client_scopes']['#default_value']);
     $this->assertEquals('https://localhost', $form['environment_url']['#default_value']);
     $this->assertEquals(['test' => 'test'], $form['client_roles']['#options']);
