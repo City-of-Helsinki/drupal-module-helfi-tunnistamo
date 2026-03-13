@@ -7,6 +7,8 @@
 
 declare(strict_types=1);
 
+use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
+use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Drupal\user\Entity\User;
 
 /**
@@ -74,4 +76,37 @@ function helfi_tunnistamo_update_9004() : void {
     ->getEditable('openid_connect.settings')
     ->set('role_mappings', [])
     ->save();
+}
+
+/**
+ * Remove unused 'auto_login' feature and disable prompt=login.
+ */
+function helfi_tunnistamo_update_9005() : void {
+  $clients = OpenIDConnectClientEntity::loadMultiple();
+
+  foreach ($clients as $client) {
+    $plugin = $client->getPlugin();
+
+    if (!$plugin instanceof Tunnistamo) {
+      continue;
+    }
+
+    $configuration = \Drupal::configFactory()
+      ->getEditable('openid_connect.client.' . $client->id());
+
+    $settings = $configuration->get('settings');
+
+    // Openid connect has its auto login functionality now, and
+    // we don't use it anywhere.
+    if (isset($settings['auto_login'])) {
+      unset($settings['auto_login']);
+    }
+
+    if (isset($settings['prompt'])) {
+      $settings['prompt'] = [];
+    }
+
+    $configuration->set('settings', $settings)
+      ->save();
+  }
 }

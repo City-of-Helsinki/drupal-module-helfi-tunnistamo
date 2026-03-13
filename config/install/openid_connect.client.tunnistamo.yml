@@ -11,7 +11,6 @@ settings:
   client_id: placeholder
   client_secret: placeholder
   client_scopes: 'openid,email'
-  auto_login: 0
   client_roles: []
   ad_roles: []
   loa_roles: []
