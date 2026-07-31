@@ -43,9 +43,14 @@ function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, 
 function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_state, $form_id) : void {
   $mail = $form['account']['mail']['#default_value'] ?? '';
 
-  if (!$account = user_load_by_mail($mail)) {
+  $accounts = Drupal::entityTypeManager()
+    ->getStorage('user')
+    ->loadByProperties(['mail' => $mail]);
+
+  if (!$account = array_first($accounts)) {
     return;
   }
+  assert($account instanceof UserInterface);
 
   if (!Drupal::service('externalauth.authmap')->getAll($account->id())) {
     return;
