@@ -151,21 +151,6 @@ parameters:
 			path: src/Plugin/OpenIDConnectClient/Tunnistamo.php
 
 		-
-			message: "#^Cannot call method getPassword\\(\\) on Drupal\\\\user\\\\Entity\\\\User\\|false\\.$#"
-			count: 2
-			path: tests/src/Kernel/DisableExternalUsersPasswordSubscriberTest.php
-
-		-
-			message: "#^Cannot call method id\\(\\) on Drupal\\\\user\\\\Entity\\\\User\\|false\\.$#"
-			count: 2
-			path: tests/src/Kernel/DisableExternalUsersPasswordSubscriberTest.php
-
-		-
-			message: "#^Parameter \\#1 \\$account of method Drupal\\\\externalauth\\\\Authmap\\:\\:save\\(\\) expects Drupal\\\\user\\\\UserInterface, Drupal\\\\user\\\\Entity\\\\User\\|false given\\.$#"
-			count: 1
-			path: tests/src/Kernel/DisableExternalUsersPasswordSubscriberTest.php
-
-		-
 			message: "#^Parameter \\$body of class GuzzleHttp\\\\Psr7\\\\Response constructor expects Psr\\\\Http\\\\Message\\\\StreamInterface\\|resource\\|string\\|null, string\\|false given\\.$#"
 			count: 1
 			path: tests/src/Kernel/KernelTestBase.php
@@ -184,16 +169,6 @@ parameters:
 			message: "#^Property Drupal\\\\Tests\\\\helfi_tunnistamo\\\\Kernel\\\\RedirectUrlEventTest\\:\\:\\$caughtEvents type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: tests/src/Kernel/RedirectUrlEventTest.php
-
-		-
-			message: "#^Cannot call method getRoles\\(\\) on Drupal\\\\user\\\\Entity\\\\User\\|false\\.$#"
-			count: 6
-			path: tests/src/Kernel/RoleMapTest.php
-
-		-
-			message: "#^Parameter \\#1 \\$account of method Drupal\\\\helfi_tunnistamo\\\\Plugin\\\\OpenIDConnectClient\\\\Tunnistamo\\:\\:mapRoles\\(\\) expects Drupal\\\\user\\\\UserInterface, Drupal\\\\user\\\\Entity\\\\User\\|false given\\.$#"
-			count: 6
-			path: tests/src/Kernel/RoleMapTest.php
 
 		-
 			message: "#^Method Drupal\\\\Tests\\\\helfi_tunnistamo\\\\Kernel\\\\UserInfoAlterTest\\:\\:authorizationData\\(\\) return type has no value type specified in iterable type array\\.$#"
