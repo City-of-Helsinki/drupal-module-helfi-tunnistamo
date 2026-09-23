@@ -7,6 +7,7 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
 use Drupal\helfi_tunnistamo\Event\RedirectUrlEvent;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -15,6 +16,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  *
  * @group helfi_tunnistamo
  */
+#[RunTestsInSeparateProcesses]
 class RedirectUrlEventTest extends KernelTestBase implements EventSubscriberInterface {
 
   /**
