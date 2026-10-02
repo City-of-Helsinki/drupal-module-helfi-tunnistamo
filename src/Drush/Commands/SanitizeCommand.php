@@ -35,8 +35,15 @@ class SanitizeCommand extends DrushCommands implements SanitizePluginInterface {
    */
   #[CLI\Hook(type: HookManager::POST_COMMAND_HOOK, target: SanitizeCommands::SANITIZE)]
   public function sanitize($result, CommandData $commandData): void {
+    // Usernames of Tunnistamo users are generated from their first and
+    // last name. Users whose authmap row has been removed still have the name
+    // saved in user data.
     $this->database->query(
-      "UPDATE {users_field_data} ufd INNER JOIN {authmap} am ON am.uid = ufd.uid SET ufd.name = CONCAT('user', ufd.uid)"
+      "UPDATE {users_field_data} SET name = CONCAT('user', uid) WHERE uid IN (SELECT am.uid FROM {authmap} am) OR uid IN (SELECT ud.uid FROM {users_data} ud WHERE ud.module = 'openid_connect' AND ud.name = 'oidc_name')"
+    );
+    // The openid_connect module saves the first and last name on every login.
+    $this->database->query(
+      "UPDATE {users_data} SET value = CONCAT('user', uid), serialized = 0 WHERE module = 'openid_connect' AND name = 'oidc_name'"
     );
   }
 
@@ -45,7 +52,7 @@ class SanitizeCommand extends DrushCommands implements SanitizePluginInterface {
    */
   #[CLI\Hook(type: HookManager::ON_EVENT, target: SanitizeCommands::CONFIRMS)]
   public function messages(array &$messages, InputInterface $input): void {
-    $messages[] = 'Sanitize tunnistamo usernames.';
+    $messages[] = 'Sanitize tunnistamo users.';
   }
 
 }
