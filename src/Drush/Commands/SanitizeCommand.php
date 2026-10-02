@@ -35,7 +35,7 @@ class SanitizeCommand extends DrushCommands implements SanitizePluginInterface {
    */
   #[CLI\Hook(type: HookManager::POST_COMMAND_HOOK, target: SanitizeCommands::SANITIZE)]
   public function sanitize($result, CommandData $commandData): void {
-    // Usernames of Tunnistamo users are generated from their first and
+    // Usernames of OpenID provider users are generated from their first and
     // last name. Users whose authmap row has been removed still have the name
     // saved in user data.
     $this->database->query(
@@ -52,7 +52,7 @@ class SanitizeCommand extends DrushCommands implements SanitizePluginInterface {
    */
   #[CLI\Hook(type: HookManager::ON_EVENT, target: SanitizeCommands::CONFIRMS)]
   public function messages(array &$messages, InputInterface $input): void {
-    $messages[] = 'Sanitize tunnistamo users.';
+    $messages[] = 'Sanitize OpenID provider users.';
   }
 
 }
