@@ -75,7 +75,14 @@ See https://helsinkisolutionoffice.atlassian.net/wiki/spaces/HEL/pages/828322613
 
 ## Preventing local user login
 
-Drupal account is created once a user has authenticated through the OpenID provider. The account cannot log without the OpenID authentication if its password is set to null. For additional safeguards, we set the password to null in [post deploy hook](https://github.com/City-of-Helsinki/drupal-module-helfi-api-base/blob/main/documentation/deploy-hooks.md) and during login.
+Drupal account is created once a user has authenticated through the OpenID provider. The account cannot log without the Tunnistamo authentication if its password is set to null. For additional safeguards, we set the password to null in [post deploy hook](https://github.com/City-of-Helsinki/drupal-module-helfi-api-base/blob/main/documentation/deploy-hooks.md) and during login.
+
+## Database sanitization
+
+`drush sql:sanitize` replaces the first and last names of OpenID provider users with `user<uid>`:
+
+- The username of users who have an `authmap` row or a saved OpenID provider name.
+- The name the openid_connect module saves on every login (`users_data`: module `openid_connect`, name `oidc_name`).
 
 ## Contact
 
