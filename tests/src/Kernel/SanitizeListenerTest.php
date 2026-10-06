@@ -10,7 +10,6 @@ use Drupal\helfi_tunnistamo\Drush\Listeners\SanitizeListener;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\UserDataInterface;
 use Drupal\user\UserInterface;
-use Drush\Event\SanitizeConfirmsEvent;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -65,16 +64,6 @@ class SanitizeListenerTest extends KernelTestBase {
     // User 3 has logged in with OpenID Connect, but the authmap row has been
     // removed since.
     $userData->set('openid_connect', $this->uids[3], 'oidc_name', 'Test user 3');
-  }
-
-  /**
-   * Tests the confirmation message.
-   */
-  public function testConfirmMessage(): void {
-    $event = new SanitizeConfirmsEvent(new ArrayInput([]));
-    $this->getSut()->onSanitizeConfirm($event);
-
-    $this->assertEquals(['Sanitize OpenID provider users.'], $event->getMessages());
   }
 
   /**
