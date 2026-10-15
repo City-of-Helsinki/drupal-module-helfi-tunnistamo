@@ -24,6 +24,8 @@ function helfi_tunnistamo_install() : void {
     ->set('end_session_enabled', TRUE)
     // Do not map roles in openid_connect module.
     ->set('role_mappings', [])
+    // Never connect users to existing accounts by email address.
+    ->set('connect_existing_users', FALSE)
     ->save();
 }
 
@@ -109,4 +111,14 @@ function helfi_tunnistamo_update_9005() : void {
     $configuration->set('settings', $settings)
       ->save();
   }
+}
+
+/**
+ * UHF-13679: Disable connecting users to existing accounts.
+ */
+function helfi_tunnistamo_update_9006() : void {
+  \Drupal::configFactory()
+    ->getEditable('openid_connect.settings')
+    ->set('connect_existing_users', FALSE)
+    ->save();
 }
