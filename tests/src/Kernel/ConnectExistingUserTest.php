@@ -43,15 +43,17 @@ class ConnectExistingUserTest extends KernelTestBase {
   }
 
   /**
-   * Make sure the update hook disables connecting to existing accounts.
+   * Make sure installing the module disables connecting to existing accounts.
    */
   public function testConnectExistingUser() : void {
     $this->config('openid_connect.settings')
       ->set('connect_existing_users', TRUE)
       ->save();
 
-    $this->container->get('module_handler')->loadInclude('helfi_tunnistamo', 'install');
-    helfi_tunnistamo_update_9006();
+    // Kernel tests don't run hook_install() for the enabled modules.
+    $moduleInstaller = $this->container->get('module_installer');
+    $moduleInstaller->uninstall(['helfi_tunnistamo']);
+    $moduleInstaller->install(['helfi_tunnistamo']);
     $this->assertFalse($this->config('openid_connect.settings')->get('connect_existing_users'));
 
     $this->createUser(values: ['mail' => 'existing@example.com']);
