@@ -6,10 +6,15 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\helfi_tunnistamo\TokenManagerInterface;
+use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
+use Drupal\openid_connect\Plugin\OpenIDConnectClientInterface;
 use Drupal\Tests\helfi_tunnistamo\Time;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
@@ -19,6 +24,9 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 #[Group('helfi_tunnistamo')]
 #[RunTestsInSeparateProcesses]
 class TokenManagerTest extends KernelTestBase {
+
+  use ProphecyTrait;
+  use UserCreationTrait;
 
   /**
    * The session the tokens live in.
@@ -31,6 +39,7 @@ class TokenManagerTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
 
+    $this->installConfig('openid_connect');
     $this->setPluginConfiguration('environment_url', 'https://localhost');
   }
 
@@ -142,6 +151,70 @@ class TokenManagerTest extends KernelTestBase {
 
     // Everything the identity provider returned must be saved: the refresh
     // token is rotated on use.
+    $this->assertTokens([
+      'access' => 'new-access-token',
+      'id' => 'new-id-token',
+      'refresh' => 'new-refresh-token',
+      'expire' => $this->now() + 300,
+    ]);
+  }
+
+  /**
+   * Tests that anonymous users can't reauthenticate.
+   */
+  public function testReauthenticateRequiresLogin(): void {
+    $this->setupSession();
+
+    $this->expectException(\LogicException::class);
+    $this->sut()->reauthenticate();
+  }
+
+  /**
+   * Tests that reauthenticating starts the connect operation.
+   */
+  public function testReauthenticate(): void {
+    $this->setupSession();
+    $account = $this->setUpCurrentUser();
+
+    $response = $this->sut()->reauthenticate();
+
+    $this->assertTrue($response->isRedirect());
+    $this->assertStringStartsWith('https://localhost/authorization?', (string) $response->headers->get('Location'));
+    $this->assertSame([
+      'op' => 'connect',
+      'uid' => (int) $account->id(),
+    ], $this->container->get('openid_connect.session')->retrieveOp(FALSE));
+  }
+
+  /**
+   * Tests that the connect operation saves the new tokens to the session.
+   */
+  public function testConnectSavesTokens(): void {
+    $this->setupSession([
+      'access' => 'expired-access-token',
+      'refresh' => 'spent-refresh-token',
+    ]);
+    $this->setUpCurrentUser();
+
+    $plugin = $this->prophesize(OpenIDConnectClientInterface::class);
+    $plugin->usesUserInfo()->willReturn(TRUE);
+    $plugin->retrieveUserInfo(Argument::cetera())->willReturn([
+      'sub' => '123',
+      'email' => 'user@example.com',
+    ]);
+    $client = $this->prophesize(OpenIDConnectClientEntityInterface::class);
+    $client->id()->willReturn('tunnistamo');
+    $client->getPlugin()->willReturn($plugin->reveal());
+
+    $success = $this->container->get('openid_connect.openid_connect')
+      ->connectCurrentUser($client->reveal(), [
+        'access_token' => 'new-access-token',
+        'id_token' => 'new-id-token',
+        'refresh_token' => 'new-refresh-token',
+        'expire' => $this->now() + 300,
+      ]);
+
+    $this->assertTrue($success);
     $this->assertTokens([
       'access' => 'new-access-token',
       'id' => 'new-id-token',
