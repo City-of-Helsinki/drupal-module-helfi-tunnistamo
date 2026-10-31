@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Config\Config;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\KernelTests\KernelTestBase as CoreKernelTestBase;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Drupal\Tests\helfi_api_base\Traits\ApiTestTrait;
+use Drupal\Tests\helfi_tunnistamo\Time;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
  * Kernel test base for tunnistamo.
@@ -19,6 +23,11 @@ use Symfony\Component\HttpFoundation\Response;
 abstract class KernelTestBase extends CoreKernelTestBase {
 
   use ApiTestTrait;
+
+  /**
+   * The session the tokens live in.
+   */
+  protected Session $session;
 
   /**
    * {@inheritdoc}
@@ -81,6 +90,52 @@ abstract class KernelTestBase extends CoreKernelTestBase {
         'end_session_endpoint' => $endSession,
       ])),
     ]);
+  }
+
+  /**
+   * Sets up the session and the identity provider.
+   *
+   * @param array<string, mixed> $tokens
+   *   The tokens the session starts with.
+   * @param array<mixed> $responses
+   *   Responses to the token endpoint requests.
+   * @param int $now
+   *   Freeze time to this timestamp. Defaults to current time.
+   */
+  protected function setupSession(array $tokens = [], array $responses = [], ?int $now = NULL): void {
+    // Set up instantiates the session, and openid_connect.session holds on to
+    // the one it was built with. Rebuilding drops both, so the session set
+    // below is the one the token manager ends up reading.
+    $this->container->get('kernel')->rebuildContainer();
+
+    $now = $now ?? $this->container->get(TimeInterface::class)->getRequestTime();
+    $this->container->set('datetime.time', new Time($now));
+
+    $client = $this->setupMockHttpClient(array_merge([
+      new GuzzleResponse(body: (string) json_encode([
+        'authorization_endpoint' => 'https://localhost/authorization',
+        'token_endpoint' => 'https://localhost/token',
+        'userinfo_endpoint' => 'https://localhost/userinfo',
+        'end_session_endpoint' => 'https://localhost/endsession',
+      ])),
+    ], $responses));
+
+    $this->container->set('http_client', $client);
+
+    $this->session = new Session(new MockArraySessionStorage());
+    $this->container->set('session', $this->session);
+    $this->container->get('request_stack')->getCurrentRequest()->setSession($this->session);
+
+    foreach ($tokens as $name => $value) {
+      $this->session->set('openid_connect_' . $name, $value);
+    }
+  }
+
+  /**
+   * Gets the time the clock is frozen at.
+   */
+  protected function now(): int {
+    return $this->container->get(TimeInterface::class)->getCurrentTime();
   }
 
   /**

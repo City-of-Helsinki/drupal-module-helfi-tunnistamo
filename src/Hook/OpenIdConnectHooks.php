@@ -30,7 +30,7 @@ final readonly class OpenIdConnectHooks {
    * @param array<string, mixed> $context
    *   The authorization context.
    *
-   * @see \Drupal\helfi_tunnistamo\TokenManagerInterface::reauthenticate()
+   * @see \Drupal\helfi_tunnistamo\ReauthenticatorInterface
    */
   #[Hook('openid_connect_post_authorize')]
   public function postAuthorize(UserInterface $account, array $context): void {

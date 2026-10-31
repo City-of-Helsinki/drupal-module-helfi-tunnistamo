@@ -1,0 +1,8 @@
+helfi_tunnistamo.resume:
+  path: '/helfi-tunnistamo/resume'
+  defaults:
+    _controller: '\Drupal\helfi_tunnistamo\Controller\ResumeController::resume'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+  options:
+    no_cache: TRUE

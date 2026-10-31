@@ -6,19 +6,14 @@ namespace Drupal\helfi_tunnistamo;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\KeyValueStore\KeyValueExpirableFactoryInterface;
 use Drupal\Core\Lock\LockBackendInterface;
-use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\openid_connect\OpenIDConnectAutoDiscover;
-use Drupal\openid_connect\OpenIDConnectClaims;
-use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
 use Drupal\openid_connect\OpenIDConnectSessionInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Provides the OpenID Connect tokens of the current session.
@@ -64,9 +59,6 @@ final class TokenManager implements TokenManagerInterface {
     private readonly OpenIDConnectSessionInterface $oidcSession,
     private readonly OpenIDConnectAutoDiscover $autoDiscover,
     private readonly ConfigFactoryInterface $configFactory,
-    private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly OpenIDConnectClaims $claims,
-    private readonly AccountProxyInterface $currentUser,
     private readonly ClientInterface $httpClient,
     private readonly TimeInterface $time,
     private readonly KeyValueExpirableFactoryInterface $keyValueExpirableFactory,
@@ -95,30 +87,6 @@ final class TokenManager implements TokenManagerInterface {
     }
 
     return $this->renew()?->accessToken;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function reauthenticate() : Response {
-    if (!$this->currentUser->isAuthenticated()) {
-      throw new \LogicException('Only logged in users can reauthenticate.');
-    }
-
-    $client = $this->entityTypeManager
-      ->getStorage('openid_connect_client')
-      ->load(self::CLIENT_ID);
-
-    if (!$client instanceof OpenIDConnectClientEntityInterface || !$client->status()) {
-      throw new \LogicException('The Tunnistamo client is not enabled.');
-    }
-
-    $plugin = $client->getPlugin();
-
-    $this->oidcSession->saveDestination();
-    $this->oidcSession->saveOp('connect', (int) $this->currentUser->id());
-
-    return $plugin->authorize($this->claims->getScopes($plugin));
   }
 
   /**
