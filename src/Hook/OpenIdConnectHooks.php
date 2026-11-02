@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Drupal\helfi_tunnistamo\Hook;
 
+use Drupal\Component\Uuid\Uuid;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\externalauth\AuthmapInterface;
+use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\helfi_tunnistamo\TokenManager;
+use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
 use Drupal\user\UserInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -21,6 +25,7 @@ final readonly class OpenIdConnectHooks {
     private TokenManager $tokenManager,
     private AuthmapInterface $authmap,
     private AccountProxyInterface $currentUser,
+    private EntityTypeManagerInterface $entityTypeManager,
     #[Autowire(service: 'logger.channel.helfi_tunnistamo')]
     private LoggerInterface $logger,
   ) {
@@ -30,12 +35,8 @@ final readonly class OpenIdConnectHooks {
    * Implements hook_openid_connect_pre_authorize().
    *
    * The connect operation links the current user to whichever identity the
-   * user logs in as, replacing the existing link. A logged-in user must log
-   * in again as the identity they are linked to, otherwise someone else's
-   * identity would take over the account.
-   *
-   * This runs before openid_connect links the account, so denying here
-   * leaves the link and the session tokens untouched.
+   * user logs in as. During reauthentication, logged-in user must log-in as
+   * the identity they are linked to.
    *
    * @param \Drupal\user\UserInterface|false $account
    *   The account linked to the identity, if any.
@@ -45,18 +46,17 @@ final readonly class OpenIdConnectHooks {
    * @return bool|null
    *   FALSE to deny the authorization, NULL to not affect it.
    *
-   * @see \Drupal\openid_connect\OpenIDConnect::connectCurrentUser()
    * @see \Drupal\helfi_tunnistamo\ReauthenticatorInterface
    */
   #[Hook('openid_connect_pre_authorize')]
   public function preAuthorize(UserInterface|false $account, array $context): ?bool {
-    // Anonymous users are logging in, not connecting.
-    if (($context['plugin_id'] ?? NULL) !== TokenManager::CLIENT_ID || !$this->currentUser->isAuthenticated()) {
+    // Anonymous users are logging in, not related to reauthentication.
+    if (!$this->getPlugin($context) || !$this->currentUser->isAuthenticated()) {
       return NULL;
     }
 
     $uid = (int) $this->currentUser->id();
-    $linked = $this->authmap->get($uid, 'openid_connect.' . TokenManager::CLIENT_ID);
+    $linked = $this->authmap->get($uid, 'openid_connect.' . $context['plugin_id']);
 
     if (!$linked || $linked === (string) $context['sub']) {
       return NULL;
@@ -70,11 +70,37 @@ final readonly class OpenIdConnectHooks {
   }
 
   /**
+   * Implements hook_openid_connect_userinfo_alter().
+   *
+   * @param array<string, mixed> $userinfo
+   *   The user info.
+   * @param array<string, mixed> $context
+   *   The context.
+   */
+  #[Hook('openid_connect_userinfo_alter')]
+  public function userinfoAlter(array &$userinfo, array $context): void {
+    if (!$this->getPlugin($context)) {
+      return;
+    }
+
+    // If the user email is missing, replace it with a made-up address (issue
+    // with @edu.hel.fi users).
+    if (empty($userinfo['email'])) {
+      $userinfo['email'] = helfi_tunnistamo_create_email($userinfo);
+    }
+
+    // Unset preferred_username if it is a UUID so that new users get their
+    // name from `name` field instead.
+    if (!empty($userinfo['preferred_username']) && Uuid::isValid($userinfo['preferred_username'])) {
+      unset($userinfo['preferred_username']);
+    }
+  }
+
+  /**
    * Implements hook_openid_connect_post_authorize().
    *
    * The openid_connect module saves the tokens to the session only on login.
-   * Save them on the connect operation as well, so users can get new tokens
-   * without logging out.
+   * Save them on the connect operation as well.
    *
    * @param \Drupal\user\UserInterface $account
    *   The user account.
@@ -85,11 +111,48 @@ final readonly class OpenIdConnectHooks {
    */
   #[Hook('openid_connect_post_authorize')]
   public function postAuthorize(UserInterface $account, array $context): void {
-    if (($context['plugin_id'] ?? NULL) !== TokenManager::CLIENT_ID || !is_array($context['tokens'] ?? NULL)) {
+    if (!$plugin = $this->getPlugin($context)) {
       return;
     }
 
-    $this->tokenManager->saveTokens($context['tokens']);
+    $plugin->mapRoles($account, $context);
+    $plugin->setUserPreferredAdminLanguage($account);
+
+    // Once user logs in with openid connect, set user password to null.
+    // This prevents the user from logging in with the local user in the
+    // future.
+    if ($account->getPassword()) {
+      $account
+        ->setPassword(NULL)
+        ->save();
+    }
+
+    if (is_array($context['tokens'] ?? NULL)) {
+      $this->tokenManager->saveTokens($context['tokens']);
+    }
+  }
+
+  /**
+   * Gets the Tunnistamo plugin of the client in the context.
+   *
+   * @param array<string, mixed> $context
+   *   The hook context.
+   */
+  private function getPlugin(array $context): ?Tunnistamo {
+    if (!is_string($context['plugin_id'] ?? NULL)) {
+      return NULL;
+    }
+
+    $client = $this->entityTypeManager
+      ->getStorage('openid_connect_client')
+      ->load($context['plugin_id']);
+
+    if (!$client instanceof OpenIDConnectClientEntityInterface) {
+      return NULL;
+    }
+
+    $plugin = $client->getPlugin();
+    return $plugin instanceof Tunnistamo ? $plugin : NULL;
   }
 
 }

@@ -7,35 +7,10 @@
 
 declare(strict_types=1);
 
-use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Database\Query\AlterableInterface;
 use Drupal\Core\Database\Query\SelectInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
-use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Drupal\user\UserInterface;
-
-/**
- * Implements hook_openid_connect_post_authorize().
- */
-function helfi_tunnistamo_openid_connect_post_authorize(UserInterface $account, array $context) : void {
-  $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
-
-  if (!$plugin instanceof Tunnistamo) {
-    return;
-  }
-  $plugin->mapRoles($account, $context);
-  $plugin->setUserPreferredAdminLanguage($account);
-
-  // Once user logs in with openid connect, set user password to null.
-  // This prevents the user from logging in with the local user in the
-  // future.
-  if ($account->getPassword()) {
-    $account
-      ->setPassword(NULL)
-      ->save();
-  }
-}
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -76,33 +51,6 @@ function helfi_tunnistamo_form_user_form_alter(&$form, FormStateInterface $form_
  */
 function helfi_tunnistamo_create_email(array $userinfo) : string {
   return $userinfo['sub'] . '+placeholder@hel.fi';
-}
-
-/**
- * Implements hook_openid_connect_userinfo_alter().
- */
-function helfi_tunnistamo_openid_connect_userinfo_alter(
-  array &$userinfo,
-  array $context,
-) : void {
-  $plugin = OpenIDConnectClientEntity::load($context['plugin_id'])?->getPlugin();
-
-  if (!$plugin instanceof Tunnistamo) {
-    return;
-  }
-
-  // If the user email is missing, replace it with a made-up address (issue
-  // with @edu.hel.fi users).
-  if (empty($userinfo['email'])) {
-    $userinfo['email'] = helfi_tunnistamo_create_email($userinfo);
-  }
-
-  // Unset preferred_username if it is a UUID so that new users get their
-  // name from `name` field instead.
-  if (!empty($userinfo['preferred_username']) && Uuid::isValid($userinfo['preferred_username'])) {
-    unset($userinfo['preferred_username']);
-  }
-
 }
 
 /**

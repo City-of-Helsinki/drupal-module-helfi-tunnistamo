@@ -19,28 +19,10 @@ parameters:
 			path: helfi_tunnistamo.module
 
 		-
-			message: '#^Function helfi_tunnistamo_openid_connect_post_authorize\(\) has parameter \$context with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: helfi_tunnistamo.module
-
-		-
-			message: '#^Function helfi_tunnistamo_openid_connect_userinfo_alter\(\) has parameter \$context with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: helfi_tunnistamo.module
-
-		-
-			message: '#^Function helfi_tunnistamo_openid_connect_userinfo_alter\(\) has parameter \$userinfo with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: helfi_tunnistamo.module
-
-		-
 			message: '#^Parameter \#1 \$password of method Drupal\\user\\UserInterface\:\:setPassword\(\) expects string, null given\.$#'
 			identifier: argument.type
 			count: 1
-			path: helfi_tunnistamo.module
+			path: src/Hook/OpenIdConnectHooks.php
 
 		-
 			message: '#^Parameter \#1 \$uid of method Drupal\\externalauth\\Authmap\:\:getAll\(\) expects int, int\|string\|null given\.$#'
