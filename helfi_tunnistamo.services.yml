@@ -15,4 +15,3 @@ services:
 
   Drupal\helfi_tunnistamo\Reauthenticator: ~
   Drupal\helfi_tunnistamo\ReauthenticatorInterface: '@Drupal\helfi_tunnistamo\Reauthenticator'
-  Drupal\helfi_tunnistamo\FormResubmitter: ~

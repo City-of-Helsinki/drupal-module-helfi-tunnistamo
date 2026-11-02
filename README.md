@@ -17,13 +17,10 @@ The redirect URL should be `https://example.com/openid-connect/tunnistamo` when 
 
 `TokenManagerInterface::getAccessToken()` returns access token of the current session. It returns `NULL` if the user did not log in with Tunnistamo, or if the token can't be renewed with profiili refresh token.
 
-When the token can't be renewed, use `ReauthenticatorInterface` to log the user in again without logging them out of Drupal. If the user still has a session with the identity provider, this needs no user interaction.
+When the token can't be renewed, use `ReauthenticatorInterface` to log the user in again without logging them out of Drupal. If the user still has a session with the identity provider, this needs no user interaction. The user must log in as the same identity that is linked to their account. Logging in as anyone else is rejected.
 
 ```php
-// In a form submit handler: submit the form again after the login.
-$form_state->setResponse($reauthenticator->reauthenticateAndResubmit($form_state));
-
-// Redirect back to the current page, or the given URL, after the login.
+// Redirects back to the current page after the login.
 return $reauthenticator->reauthenticate();
 ```
 

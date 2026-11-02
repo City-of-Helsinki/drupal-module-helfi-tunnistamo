@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\helfi_tunnistamo\TokenManagerInterface;
-use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
-use Drupal\openid_connect\Plugin\OpenIDConnectClientInterface;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 
 /**
  * Tests the token manager.
@@ -21,7 +17,6 @@ use Prophecy\PhpUnit\ProphecyTrait;
 #[RunTestsInSeparateProcesses]
 class TokenManagerTest extends KernelTestBase {
 
-  use ProphecyTrait;
   use UserCreationTrait;
 
   /**
@@ -113,31 +108,48 @@ class TokenManagerTest extends KernelTestBase {
       'refresh' => 'spent-refresh-token',
     ]);
     $this->setUpCurrentUser();
+    $this->linkCurrentUser('123');
 
-    $plugin = $this->prophesize(OpenIDConnectClientInterface::class);
-    $plugin->usesUserInfo()->willReturn(TRUE);
-    $plugin->retrieveUserInfo(Argument::cetera())->willReturn([
-      'sub' => '123',
-      'email' => 'user@example.com',
-    ]);
-    $client = $this->prophesize(OpenIDConnectClientEntityInterface::class);
-    $client->id()->willReturn('tunnistamo');
-    $client->getPlugin()->willReturn($plugin->reveal());
-
-    $success = $this->container->get('openid_connect.openid_connect')
-      ->connectCurrentUser($client->reveal(), [
-        'access_token' => 'new-access-token',
-        'id_token' => 'new-id-token',
-        'refresh_token' => 'new-refresh-token',
-        'expire' => $this->now() + 300,
-      ]);
-
-    $this->assertTrue($success);
+    $this->assertTrue($this->connectAs('123', [
+      'access_token' => 'new-access-token',
+      'id_token' => 'new-id-token',
+      'refresh_token' => 'new-refresh-token',
+      'expire' => $this->now() + 300,
+    ]));
     $this->assertTokens([
       'access' => 'new-access-token',
       'id' => 'new-id-token',
       'refresh' => 'new-refresh-token',
       'expire' => $this->now() + 300,
+    ]);
+    $this->assertSame('123', $this->getLinkedSub());
+  }
+
+  /**
+   * Tests that connecting as a different identity is denied.
+   */
+  public function testConnectAsDifferentIdentityIsDenied(): void {
+    $this->setupSession([
+      'access' => 'expired-access-token',
+      'refresh' => 'spent-refresh-token',
+    ]);
+    $this->setUpCurrentUser();
+    $this->linkCurrentUser('123');
+
+    $this->assertFalse($this->connectAs('456', [
+      'access_token' => 'other-access-token',
+      'id_token' => 'other-id-token',
+      'refresh_token' => 'other-refresh-token',
+      'expire' => $this->now() + 300,
+    ]));
+
+    // The account link and the session were left as they were.
+    $this->assertSame('123', $this->getLinkedSub());
+    $this->assertTokens([
+      'access' => 'expired-access-token',
+      'id' => NULL,
+      'refresh' => 'spent-refresh-token',
+      'expire' => NULL,
     ]);
   }
 

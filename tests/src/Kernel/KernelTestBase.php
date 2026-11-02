@@ -6,12 +6,18 @@ namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Config\Config;
+use Drupal\externalauth\AuthmapInterface;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\KernelTests\KernelTestBase as CoreKernelTestBase;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
+use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
+use Drupal\openid_connect\Plugin\OpenIDConnectClientInterface;
 use Drupal\Tests\helfi_api_base\Traits\ApiTestTrait;
 use Drupal\Tests\helfi_tunnistamo\Time;
+use Drupal\user\Entity\User;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -23,6 +29,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 abstract class KernelTestBase extends CoreKernelTestBase {
 
   use ApiTestTrait;
+  use ProphecyTrait;
 
   /**
    * The session the tokens live in.
@@ -136,6 +143,50 @@ abstract class KernelTestBase extends CoreKernelTestBase {
    */
   protected function now(): int {
     return $this->container->get(TimeInterface::class)->getCurrentTime();
+  }
+
+  /**
+   * Links the current user to the given Tunnistamo identity.
+   */
+  protected function linkCurrentUser(string $sub): void {
+    $account = User::load($this->container->get('current_user')->id());
+    $this->container->get(AuthmapInterface::class)->save($account, 'openid_connect.tunnistamo', $sub);
+  }
+
+  /**
+   * Gets the Tunnistamo identity linked to the current user.
+   */
+  protected function getLinkedSub(): ?string {
+    $sub = $this->container->get(AuthmapInterface::class)
+      ->get((int) $this->container->get('current_user')->id(), 'openid_connect.tunnistamo');
+
+    return is_string($sub) ? $sub : NULL;
+  }
+
+  /**
+   * Runs the connect operation as if the user logged in as the given identity.
+   *
+   * @param string $sub
+   *   The identity the user logged in as.
+   * @param array<string, mixed> $tokens
+   *   The tokens the identity provider returned.
+   *
+   * @return bool
+   *   Whether the connect operation succeeded.
+   */
+  protected function connectAs(string $sub, array $tokens): bool {
+    $plugin = $this->prophesize(OpenIDConnectClientInterface::class);
+    $plugin->usesUserInfo()->willReturn(TRUE);
+    $plugin->retrieveUserInfo(Argument::cetera())->willReturn([
+      'sub' => $sub,
+      'email' => 'user@example.com',
+    ]);
+    $client = $this->prophesize(OpenIDConnectClientEntityInterface::class);
+    $client->id()->willReturn('tunnistamo');
+    $client->getPlugin()->willReturn($plugin->reveal());
+
+    return $this->container->get('openid_connect.openid_connect')
+      ->connectCurrentUser($client->reveal(), $tokens);
   }
 
   /**
