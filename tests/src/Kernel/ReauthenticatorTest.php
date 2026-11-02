@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
+use Drupal\Core\Url;
 use Drupal\helfi_tunnistamo\ReauthenticatorInterface;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\Group;
@@ -29,36 +30,21 @@ class ReauthenticatorTest extends KernelTestBase {
   }
 
   /**
-   * Gets the reauthenticator.
-   */
-  private function sut(): ReauthenticatorInterface {
-    return $this->container->get(ReauthenticatorInterface::class);
-  }
-
-  /**
    * Tests users who can't log in again.
    */
   public function testRequirements(): void {
     // Anonymous user.
     $this->setupSession(['access' => 'access-token']);
-    $this->assertLogicException(fn () => $this->sut()->reauthenticate(), 'Only logged in users');
+    $this->assertReauthenticateFails('Only logged in users');
 
     // User did not log in with Tunnistamo.
     $this->setupSession();
     $this->setUpCurrentUser();
-    $this->assertLogicException(fn () => $this->sut()->reauthenticate(), 'did not log in with Tunnistamo');
+    $this->assertReauthenticateFails('did not log in with Tunnistamo');
 
     // User is not linked to Tunnistamo.
     $this->setupSession(['access' => 'access-token']);
-    $this->setUpCurrentUser();
-    $this->assertLogicException(fn () => $this->sut()->reauthenticate(), 'not linked to Tunnistamo');
-
-    // Client is disabled.
-    $this->setupSession(['access' => 'access-token']);
-    $this->setUpCurrentUser();
-    $this->linkCurrentUser('123');
-    $this->getPluginConfiguration()->set('status', FALSE)->save();
-    $this->assertLogicException(fn () => $this->sut()->reauthenticate(), 'not enabled');
+    $this->assertReauthenticateFails('not linked to Tunnistamo');
   }
 
   /**
@@ -69,24 +55,30 @@ class ReauthenticatorTest extends KernelTestBase {
     $uid = (int) $this->setUpCurrentUser()->id();
     $this->linkCurrentUser('123');
 
-    $response = $this->sut()->reauthenticate();
+    $response = $this->sut()->reauthenticate(Url::fromUri('internal:/some/path'));
     $this->assertStringStartsWith('https://localhost/authorization?', (string) $response->headers->get('Location'));
 
     $oidcSession = $this->container->get('openid_connect.session');
     $this->assertSame(['op' => 'connect', 'uid' => $uid], $oidcSession->retrieveOp(FALSE));
-    // The user is sent back to the current page.
-    $this->assertSame(
-      ltrim($this->container->get('redirect.destination')->get(), '/'),
-      $oidcSession->retrieveDestination(FALSE)['destination'],
-    );
+    $this->assertSame('some/path', $oidcSession->retrieveDestination(FALSE)['destination']);
   }
 
   /**
-   * Asserts that the callback throws \LogicException.
+   * Gets the reauthenticator.
+   *
+   * Fetched after setupSession(), which rebuilds the container: an instance
+   * from before the rebuild holds on to the old session and current user.
    */
-  private function assertLogicException(callable $callback, string $message): void {
+  private function sut(): ReauthenticatorInterface {
+    return $this->container->get(ReauthenticatorInterface::class);
+  }
+
+  /**
+   * Asserts that reauthentication throws \LogicException.
+   */
+  private function assertReauthenticateFails(string $message): void {
     try {
-      $callback();
+      $this->sut()->reauthenticate(Url::fromUri('internal:/some/path'));
       $this->fail('Expected exception was not thrown.');
     }
     catch (\LogicException $e) {

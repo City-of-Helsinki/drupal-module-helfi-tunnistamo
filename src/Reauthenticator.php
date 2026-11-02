@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Drupal\helfi_tunnistamo;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Routing\RedirectDestinationInterface;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Url;
 use Drupal\externalauth\AuthmapInterface;
 use Drupal\openid_connect\OpenIDConnectClaims;
 use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
@@ -24,25 +26,22 @@ final readonly class Reauthenticator implements ReauthenticatorInterface {
     private EntityTypeManagerInterface $entityTypeManager,
     private AccountProxyInterface $currentUser,
     private AuthmapInterface $authmap,
+    private RedirectDestinationInterface $redirectDestination,
   ) {
   }
 
   /**
    * {@inheritdoc}
    */
-  public function reauthenticate() : Response {
+  public function reauthenticate(?Url $destination = NULL) : Response {
     if (!$this->currentUser->isAuthenticated()) {
       throw new \LogicException('Only logged in users can reauthenticate.');
     }
 
-    // Logging in again would link the identity provider account to a user
-    // who logged in with a password.
     if (!$this->tokenManager->hasSession()) {
       throw new \LogicException('The current user did not log in with Tunnistamo.');
     }
 
-    // The new login is accepted only for the linked identity.
-    // @see \Drupal\helfi_tunnistamo\Hook\OpenIdConnectHooks::preAuthorize()
     if (!$this->authmap->get((int) $this->currentUser->id(), 'openid_connect.' . TokenManager::CLIENT_ID)) {
       throw new \LogicException('The current user is not linked to Tunnistamo.');
     }
@@ -55,11 +54,13 @@ final readonly class Reauthenticator implements ReauthenticatorInterface {
       throw new \LogicException('The Tunnistamo client is not enabled.');
     }
 
-    // The connect operation authenticates the current user without logging
-    // them out. The new tokens are saved by the post authorize hook. The user
-    // is redirected back to the current page.
-    // @see \Drupal\helfi_tunnistamo\Hook\OpenIdConnectHooks::postAuthorize()
+    if ($destination) {
+      $this->redirectDestination->set($destination->toString());
+    }
     $this->oidcSession->saveDestination();
+
+    // The connect operation authenticates the current user without logging
+    // them out. The new tokens are saved by the post authorize hook.
     $this->oidcSession->saveOp('connect', (int) $this->currentUser->id());
 
     $plugin = $client->getPlugin();

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
+use Drupal\externalauth\AuthmapInterface;
 use Drupal\helfi_tunnistamo\TokenManagerInterface;
+use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use PHPUnit\Framework\Attributes\Group;
@@ -29,31 +31,7 @@ class TokenManagerTest extends KernelTestBase {
   }
 
   /**
-   * Gets the token manager.
-   */
-  private function sut(): TokenManagerInterface {
-    return $this->container->get(TokenManagerInterface::class);
-  }
-
-  /**
-   * Asserts the tokens the session holds.
-   *
-   * @param array<string, mixed> $tokens
-   *   The expected tokens, keyed by name. A token expected to be NULL is one
-   *   the session must not have.
-   */
-  private function assertTokens(array $tokens): void {
-    foreach ($tokens as $name => $expected) {
-      $this->assertSame(
-        $expected,
-        $this->session->get('openid_connect_' . $name),
-        sprintf('The session holds an unexpected %s token.', $name),
-      );
-    }
-  }
-
-  /**
-   * Tests that a token that is still valid is returned as is.
+   * Tests that a valid token is returned as is.
    */
   public function testValidTokenIsNotRenewed(): void {
     $this->setupSession([
@@ -61,9 +39,7 @@ class TokenManagerTest extends KernelTestBase {
       'expire' => $this->now() + 3600,
     ]);
 
-    $this->assertSame('access-token', $this->sut()->getAccessToken());
-
-    // The session was left as it was.
+    $this->assertSame('access-token', $this->container->get(TokenManagerInterface::class)->getAccessToken());
     $this->assertTokens(['access' => 'access-token']);
   }
 
@@ -87,10 +63,7 @@ class TokenManagerTest extends KernelTestBase {
       ],
     );
 
-    $this->assertSame('new-access-token', $this->sut()->getAccessToken());
-
-    // Everything the identity provider returned must be saved: the refresh
-    // token is rotated on use.
+    $this->assertSame('new-access-token', $this->container->get(TokenManagerInterface::class)->getAccessToken());
     $this->assertTokens([
       'access' => 'new-access-token',
       'id' => 'new-id-token',
@@ -151,6 +124,51 @@ class TokenManagerTest extends KernelTestBase {
       'refresh' => 'spent-refresh-token',
       'expire' => NULL,
     ]);
+  }
+
+  /**
+   * Gets the Tunnistamo identity linked to the current user.
+   */
+  protected function getLinkedSub(): ?string {
+    $sub = $this->container->get(AuthmapInterface::class)
+      ->get((int) $this->container->get('current_user')->id(), 'openid_connect.tunnistamo');
+
+    return is_string($sub) ? $sub : NULL;
+  }
+
+  /**
+   * Runs the connect operation as if the user logged in as the given identity.
+   *
+   * Requires setupSession().
+   *
+   * @param string $sub
+   *   The identity the user logged in as.
+   * @param array<string, mixed> $tokens
+   *   The tokens the identity provider returned.
+   *
+   * @return bool
+   *   Whether the connect operation succeeded.
+   */
+  protected function connectAs(string $sub, array $tokens): bool {
+    $this->responses->append(new GuzzleResponse(body: (string) json_encode([
+      'sub' => $sub,
+      'email' => 'user@example.com',
+    ])));
+
+    return $this->container->get('openid_connect.openid_connect')
+      ->connectCurrentUser(OpenIDConnectClientEntity::load('tunnistamo'), $tokens);
+  }
+
+  /**
+   * Asserts the tokens the session holds.
+   *
+   * @param array<string, mixed> $tokens
+   *   The expected tokens keyed by name.
+   */
+  private function assertTokens(array $tokens): void {
+    foreach ($tokens as $name => $expected) {
+      $this->assertSame($expected, $this->session->get('openid_connect_' . $name));
+    }
   }
 
 }

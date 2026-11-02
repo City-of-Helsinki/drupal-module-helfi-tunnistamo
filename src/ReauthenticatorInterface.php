@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\helfi_tunnistamo;
 
+use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -17,7 +18,11 @@ use Symfony\Component\HttpFoundation\Response;
 interface ReauthenticatorInterface {
 
   /**
-   * Logs the user in again, then redirects them back to the current page.
+   * Logs the user in again, then redirects them to the destination.
+   *
+   * @param \Drupal\Core\Url|null $destination
+   *   Where the user is redirected after the login. Defaults to the current
+   *   page.
    *
    * @return \Symfony\Component\HttpFoundation\Response
    *   Redirect to the identity provider.
@@ -25,6 +30,6 @@ interface ReauthenticatorInterface {
    * @throws \LogicException
    *   If the current user can't be logged in again.
    */
-  public function reauthenticate() : Response;
+  public function reauthenticate(?Url $destination = NULL) : Response;
 
 }

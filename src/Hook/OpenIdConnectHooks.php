@@ -34,10 +34,6 @@ final readonly class OpenIdConnectHooks {
   /**
    * Implements hook_openid_connect_pre_authorize().
    *
-   * The connect operation links the current user to whichever identity the
-   * user logs in as. During reauthentication, logged-in user must log-in as
-   * the identity they are linked to.
-   *
    * @param \Drupal\user\UserInterface|false $account
    *   The account linked to the identity, if any.
    * @param array<string, mixed> $context
@@ -58,6 +54,8 @@ final readonly class OpenIdConnectHooks {
     $uid = (int) $this->currentUser->id();
     $linked = $this->authmap->get($uid, 'openid_connect.' . $context['plugin_id']);
 
+    // During reauthentication, logged-in user must log-in
+    // as the identity they are linked to.
     if (!$linked || $linked === (string) $context['sub']) {
       return NULL;
     }
@@ -99,9 +97,6 @@ final readonly class OpenIdConnectHooks {
   /**
    * Implements hook_openid_connect_post_authorize().
    *
-   * The openid_connect module saves the tokens to the session only on login.
-   * Save them on the connect operation as well.
-   *
    * @param \Drupal\user\UserInterface $account
    *   The user account.
    * @param array<string, mixed> $context
@@ -127,6 +122,8 @@ final readonly class OpenIdConnectHooks {
         ->save();
     }
 
+    // The openid_connect module saves the tokens to the session only on
+    // login. Save them on the connect operation as well.
     if (is_array($context['tokens'] ?? NULL)) {
       $this->tokenManager->saveTokens($context['tokens']);
     }

@@ -10,13 +10,14 @@ use Drupal\externalauth\AuthmapInterface;
 use Drupal\helfi_tunnistamo\Plugin\OpenIDConnectClient\Tunnistamo;
 use Drupal\KernelTests\KernelTestBase as CoreKernelTestBase;
 use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
-use Drupal\openid_connect\OpenIDConnectClientEntityInterface;
-use Drupal\openid_connect\Plugin\OpenIDConnectClientInterface;
+use Drupal\Tests\helfi_api_base\Mock\MockClientFactory;
 use Drupal\Tests\helfi_api_base\Traits\ApiTestTrait;
 use Drupal\Tests\helfi_tunnistamo\Time;
 use Drupal\user\Entity\User;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
-use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,6 +36,11 @@ abstract class KernelTestBase extends CoreKernelTestBase {
    * The session the tokens live in.
    */
   protected Session $session;
+
+  /**
+   * The queue of responses the identity provider returns.
+   */
+  protected MockHandler $responses;
 
   /**
    * {@inheritdoc}
@@ -104,21 +110,18 @@ abstract class KernelTestBase extends CoreKernelTestBase {
    *
    * @param array<string, mixed> $tokens
    *   The tokens the session starts with.
-   * @param array<mixed> $responses
+   * @param \Psr\Http\Message\ResponseInterface[]|\GuzzleHttp\Exception\GuzzleException[] $responses
    *   Responses to the token endpoint requests.
-   * @param int $now
+   * @param int|null $now
    *   Freeze time to this timestamp. Defaults to current time.
    */
   protected function setupSession(array $tokens = [], array $responses = [], ?int $now = NULL): void {
-    // Set up instantiates the session, and openid_connect.session holds on to
-    // the one it was built with. Rebuilding drops both, so the session set
-    // below is the one the token manager ends up reading.
     $this->container->get('kernel')->rebuildContainer();
 
     $now = $now ?? $this->container->get(TimeInterface::class)->getRequestTime();
     $this->container->set('datetime.time', new Time($now));
 
-    $client = $this->setupMockHttpClient(array_merge([
+    $this->responses = new MockHandler(array_merge([
       new GuzzleResponse(body: (string) json_encode([
         'authorization_endpoint' => 'https://localhost/authorization',
         'token_endpoint' => 'https://localhost/token',
@@ -126,7 +129,9 @@ abstract class KernelTestBase extends CoreKernelTestBase {
         'end_session_endpoint' => 'https://localhost/endsession',
       ])),
     ], $responses));
+    $client = new Client(['handler' => HandlerStack::create($this->responses)]);
 
+    $this->container->set('http_client_factory', new MockClientFactory($client));
     $this->container->set('http_client', $client);
 
     $this->session = new Session(new MockArraySessionStorage());
@@ -151,42 +156,6 @@ abstract class KernelTestBase extends CoreKernelTestBase {
   protected function linkCurrentUser(string $sub): void {
     $account = User::load($this->container->get('current_user')->id());
     $this->container->get(AuthmapInterface::class)->save($account, 'openid_connect.tunnistamo', $sub);
-  }
-
-  /**
-   * Gets the Tunnistamo identity linked to the current user.
-   */
-  protected function getLinkedSub(): ?string {
-    $sub = $this->container->get(AuthmapInterface::class)
-      ->get((int) $this->container->get('current_user')->id(), 'openid_connect.tunnistamo');
-
-    return is_string($sub) ? $sub : NULL;
-  }
-
-  /**
-   * Runs the connect operation as if the user logged in as the given identity.
-   *
-   * @param string $sub
-   *   The identity the user logged in as.
-   * @param array<string, mixed> $tokens
-   *   The tokens the identity provider returned.
-   *
-   * @return bool
-   *   Whether the connect operation succeeded.
-   */
-  protected function connectAs(string $sub, array $tokens): bool {
-    $plugin = $this->prophesize(OpenIDConnectClientInterface::class);
-    $plugin->usesUserInfo()->willReturn(TRUE);
-    $plugin->retrieveUserInfo(Argument::cetera())->willReturn([
-      'sub' => $sub,
-      'email' => 'user@example.com',
-    ]);
-    $client = $this->prophesize(OpenIDConnectClientEntityInterface::class);
-    $client->id()->willReturn('tunnistamo');
-    $client->getPlugin()->willReturn($plugin->reveal());
-
-    return $this->container->get('openid_connect.openid_connect')
-      ->connectCurrentUser($client->reveal(), $tokens);
   }
 
   /**

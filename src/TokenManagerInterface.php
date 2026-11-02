@@ -13,6 +13,7 @@ interface TokenManagerInterface {
    * Checks whether the current session was authenticated with Tunnistamo.
    *
    * This only looks at the session and never talks to the identity provider.
+   * This newer makes network requests.
    *
    * @return bool
    *   TRUE if the session holds an access token.

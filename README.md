@@ -20,7 +20,7 @@ The redirect URL should be `https://example.com/openid-connect/tunnistamo` when 
 When the token can't be renewed, use `ReauthenticatorInterface` to log the user in again without logging them out of Drupal. If the user still has a session with the identity provider, this needs no user interaction. The user must log in as the same identity that is linked to their account. Logging in as anyone else is rejected.
 
 ```php
-// Redirects back to the current page after the login.
+// Redirects back to the current page, or the given URL, after the login.
 return $reauthenticator->reauthenticate();
 ```
 

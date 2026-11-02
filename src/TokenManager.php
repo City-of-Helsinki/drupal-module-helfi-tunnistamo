@@ -93,8 +93,9 @@ final class TokenManager implements TokenManagerInterface {
    * Saves tokens from an authorization response to the session.
    *
    * @param array<string, mixed> $tokens
-   *   The tokens, as returned by
-   *   OpenIDConnectClientInterface::retrieveTokens().
+   *   The tokens.
+   *
+   * @see \Drupal\openid_connect\OpenIDConnect::completeAuthorization()
    */
   public function saveTokens(#[\SensitiveParameter] array $tokens) : void {
     if (is_string($tokens['id_token'] ?? NULL)) {
@@ -128,7 +129,7 @@ final class TokenManager implements TokenManagerInterface {
     $token = $this->renewOnce($refreshToken);
 
     if ($token) {
-      $this->persist($token);
+      $this->saveTokens($token->toArray());
     }
 
     return $token;
@@ -178,16 +179,6 @@ final class TokenManager implements TokenManagerInterface {
     finally {
       $this->lock->release($lockName);
     }
-  }
-
-  /**
-   * Saves a set of tokens to the session.
-   */
-  private function persist(Token $token) : void {
-    $this->oidcSession->saveAccessToken($token->accessToken);
-    $this->oidcSession->saveIdToken($token->idToken);
-    $this->oidcSession->saveRefreshToken($token->refreshToken);
-    $this->oidcSession->saveExpireToken($token->expire);
   }
 
   /**
