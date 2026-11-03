@@ -26,9 +26,14 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 final class TokenManager implements TokenManagerInterface {
 
   /**
+   * ID of the OpenID Connect client the tokens are issued by.
+   */
+  public const string CLIENT_ID = 'tunnistamo';
+
+  /**
    * Configuration of the OpenID Connect client to renew tokens with.
    */
-  private const string CLIENT_CONFIG = 'openid_connect.client.tunnistamo';
+  private const string CLIENT_CONFIG = 'openid_connect.client.' . self::CLIENT_ID;
 
   /**
    * Where the result of a renewal is kept for the requests that lost the race.
@@ -85,6 +90,29 @@ final class TokenManager implements TokenManagerInterface {
   }
 
   /**
+   * Saves tokens from an authorization response to the session.
+   *
+   * @param array<string, mixed> $tokens
+   *   The tokens.
+   *
+   * @see \Drupal\openid_connect\OpenIDConnect::completeAuthorization()
+   */
+  public function saveTokens(#[\SensitiveParameter] array $tokens) : void {
+    if (is_string($tokens['id_token'] ?? NULL)) {
+      $this->oidcSession->saveIdToken($tokens['id_token']);
+    }
+    if (is_string($tokens['access_token'] ?? NULL)) {
+      $this->oidcSession->saveAccessToken($tokens['access_token']);
+    }
+    if (is_string($tokens['refresh_token'] ?? NULL)) {
+      $this->oidcSession->saveRefreshToken($tokens['refresh_token']);
+    }
+    if (is_int($tokens['expire'] ?? NULL)) {
+      $this->oidcSession->saveExpireToken($tokens['expire']);
+    }
+  }
+
+  /**
    * Runs the refresh token grant and saves the new tokens to the session.
    *
    * @return \Drupal\helfi_tunnistamo\Token|null
@@ -101,7 +129,7 @@ final class TokenManager implements TokenManagerInterface {
     $token = $this->renewOnce($refreshToken);
 
     if ($token) {
-      $this->persist($token);
+      $this->saveTokens($token->toArray());
     }
 
     return $token;
@@ -151,16 +179,6 @@ final class TokenManager implements TokenManagerInterface {
     finally {
       $this->lock->release($lockName);
     }
-  }
-
-  /**
-   * Saves a set of tokens to the session.
-   */
-  private function persist(Token $token) : void {
-    $this->oidcSession->saveAccessToken($token->accessToken);
-    $this->oidcSession->saveIdToken($token->idToken);
-    $this->oidcSession->saveRefreshToken($token->refreshToken);
-    $this->oidcSession->saveExpireToken($token->expire);
   }
 
   /**

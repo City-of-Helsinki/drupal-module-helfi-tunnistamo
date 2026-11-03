@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\helfi_tunnistamo\Kernel;
 
-use Drupal\Component\Datetime\TimeInterface;
+use Drupal\externalauth\AuthmapInterface;
 use Drupal\helfi_tunnistamo\TokenManagerInterface;
-use Drupal\Tests\helfi_tunnistamo\Time;
+use Drupal\openid_connect\Entity\OpenIDConnectClientEntity;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
  * Tests the token manager.
@@ -20,10 +19,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 #[RunTestsInSeparateProcesses]
 class TokenManagerTest extends KernelTestBase {
 
-  /**
-   * The session the tokens live in.
-   */
-  private Session $session;
+  use UserCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -35,76 +31,7 @@ class TokenManagerTest extends KernelTestBase {
   }
 
   /**
-   * Sets up the session and the identity provider.
-   *
-   * @param array<string, mixed> $tokens
-   *   The tokens the session starts with.
-   * @param array<mixed> $responses
-   *   Responses to the token endpoint requests.
-   * @param int $now
-   *   Freeze time to this timestamp. Defaults to current time.
-   */
-  private function setupSession(array $tokens = [], array $responses = [], ?int $now = NULL): void {
-    // Set up instantiates the session, and openid_connect.session holds on to
-    // the one it was built with. Rebuilding drops both, so the session set
-    // below is the one the token manager ends up reading.
-    $this->container->get('kernel')->rebuildContainer();
-
-    $now = $now ?? $this->container->get(TimeInterface::class)->getRequestTime();
-    $this->container->set('datetime.time', new Time($now));
-
-    $client = $this->setupMockHttpClient(array_merge([
-      new GuzzleResponse(body: (string) json_encode([
-        'authorization_endpoint' => 'https://localhost/authorization',
-        'token_endpoint' => 'https://localhost/token',
-        'userinfo_endpoint' => 'https://localhost/userinfo',
-        'end_session_endpoint' => 'https://localhost/endsession',
-      ])),
-    ], $responses));
-
-    $this->container->set('http_client', $client);
-
-    $this->session = new Session(new MockArraySessionStorage());
-    $this->container->set('session', $this->session);
-
-    foreach ($tokens as $name => $value) {
-      $this->session->set('openid_connect_' . $name, $value);
-    }
-  }
-
-  /**
-   * Gets the token manager.
-   */
-  private function sut(): TokenManagerInterface {
-    return $this->container->get(TokenManagerInterface::class);
-  }
-
-  /**
-   * Gets the time the clock is frozen at.
-   */
-  private function now(): int {
-    return $this->container->get(TimeInterface::class)->getCurrentTime();
-  }
-
-  /**
-   * Asserts the tokens the session holds.
-   *
-   * @param array<string, mixed> $tokens
-   *   The expected tokens, keyed by name. A token expected to be NULL is one
-   *   the session must not have.
-   */
-  private function assertTokens(array $tokens): void {
-    foreach ($tokens as $name => $expected) {
-      $this->assertSame(
-        $expected,
-        $this->session->get('openid_connect_' . $name),
-        sprintf('The session holds an unexpected %s token.', $name),
-      );
-    }
-  }
-
-  /**
-   * Tests that a token that is still valid is returned as is.
+   * Tests that a valid token is returned as is.
    */
   public function testValidTokenIsNotRenewed(): void {
     $this->setupSession([
@@ -112,9 +39,7 @@ class TokenManagerTest extends KernelTestBase {
       'expire' => $this->now() + 3600,
     ]);
 
-    $this->assertSame('access-token', $this->sut()->getAccessToken());
-
-    // The session was left as it was.
+    $this->assertSame('access-token', $this->container->get(TokenManagerInterface::class)->getAccessToken());
     $this->assertTokens(['access' => 'access-token']);
   }
 
@@ -138,16 +63,112 @@ class TokenManagerTest extends KernelTestBase {
       ],
     );
 
-    $this->assertSame('new-access-token', $this->sut()->getAccessToken());
-
-    // Everything the identity provider returned must be saved: the refresh
-    // token is rotated on use.
+    $this->assertSame('new-access-token', $this->container->get(TokenManagerInterface::class)->getAccessToken());
     $this->assertTokens([
       'access' => 'new-access-token',
       'id' => 'new-id-token',
       'refresh' => 'new-refresh-token',
       'expire' => $this->now() + 300,
     ]);
+  }
+
+  /**
+   * Tests that the connect operation saves the new tokens to the session.
+   */
+  public function testConnectSavesTokens(): void {
+    $this->setupSession([
+      'access' => 'expired-access-token',
+      'refresh' => 'spent-refresh-token',
+    ]);
+    $this->setUpCurrentUser();
+    $this->linkCurrentUser('123');
+
+    $this->assertTrue($this->connectAs('123', [
+      'access_token' => 'new-access-token',
+      'id_token' => 'new-id-token',
+      'refresh_token' => 'new-refresh-token',
+      'expire' => $this->now() + 300,
+    ]));
+    $this->assertTokens([
+      'access' => 'new-access-token',
+      'id' => 'new-id-token',
+      'refresh' => 'new-refresh-token',
+      'expire' => $this->now() + 300,
+    ]);
+    $this->assertSame('123', $this->getLinkedSub());
+  }
+
+  /**
+   * Tests that connecting as a different identity is denied.
+   */
+  public function testConnectAsDifferentIdentityIsDenied(): void {
+    $this->setupSession([
+      'access' => 'expired-access-token',
+      'refresh' => 'spent-refresh-token',
+    ]);
+    $this->setUpCurrentUser();
+    $this->linkCurrentUser('123');
+
+    $this->assertFalse($this->connectAs('456', [
+      'access_token' => 'other-access-token',
+      'id_token' => 'other-id-token',
+      'refresh_token' => 'other-refresh-token',
+      'expire' => $this->now() + 300,
+    ]));
+
+    // The account link and the session were left as they were.
+    $this->assertSame('123', $this->getLinkedSub());
+    $this->assertTokens([
+      'access' => 'expired-access-token',
+      'id' => NULL,
+      'refresh' => 'spent-refresh-token',
+      'expire' => NULL,
+    ]);
+  }
+
+  /**
+   * Gets the Tunnistamo identity linked to the current user.
+   */
+  protected function getLinkedSub(): ?string {
+    $sub = $this->container->get(AuthmapInterface::class)
+      ->get((int) $this->container->get('current_user')->id(), 'openid_connect.tunnistamo');
+
+    return is_string($sub) ? $sub : NULL;
+  }
+
+  /**
+   * Runs the connect operation as if the user logged in as the given identity.
+   *
+   * Requires setupSession().
+   *
+   * @param string $sub
+   *   The identity the user logged in as.
+   * @param array<string, mixed> $tokens
+   *   The tokens the identity provider returned.
+   *
+   * @return bool
+   *   Whether the connect operation succeeded.
+   */
+  protected function connectAs(string $sub, array $tokens): bool {
+    $this->responses->append(new GuzzleResponse(body: (string) json_encode([
+      'sub' => $sub,
+      'email' => 'user@example.com',
+    ])));
+
+    return $this->container->get('openid_connect.openid_connect')
+      ->connectCurrentUser(OpenIDConnectClientEntity::load('tunnistamo'), $tokens);
+  }
+
+  /**
+   * Asserts the tokens the session holds.
+   *
+   * @param array<string, mixed> $tokens
+   *   The expected tokens keyed by name.
+   */
+  private function assertTokens(array $tokens): void {
+    foreach ($tokens as $name => $expected) {
+      $this->assertSame($expected, $this->session->get('openid_connect_' . $name));
+    }
   }
 
 }

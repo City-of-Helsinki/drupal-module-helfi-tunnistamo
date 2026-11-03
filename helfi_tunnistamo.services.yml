@@ -12,3 +12,6 @@ services:
 
   Drupal\helfi_tunnistamo\TokenManager: ~
   Drupal\helfi_tunnistamo\TokenManagerInterface: '@Drupal\helfi_tunnistamo\TokenManager'
+
+  Drupal\helfi_tunnistamo\Reauthenticator: ~
+  Drupal\helfi_tunnistamo\ReauthenticatorInterface: '@Drupal\helfi_tunnistamo\Reauthenticator'
